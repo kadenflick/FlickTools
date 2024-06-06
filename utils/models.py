@@ -101,6 +101,12 @@ class Table(DescribeModel):
                 cursor.updateRow(row)
         return
     
+    def __iter__(self):
+        return self.get_rows(["*"], as_dict=True)
+    
+    def __len__(self):
+        return len([i for i in self.get_rows[f"{self.OIDField}"]])
+    
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """
     DATATYPE: str = "FeatureClass"
@@ -140,14 +146,3 @@ class Dataset(DescribeModel):
 class GeoDatabase(DescribeModel):
     """ Wrapper for basic GeoDatabase operations """
     DATATYPE: str = "GeoDatabase"
-
-
-# TESTS
-
-TEST_PATH = r"F:\GIS\Henderson\Shapefiles\Buildings\Buildings.shp"
-shp = ShapeFile(TEST_PATH)
-print(shp.DATATYPE, shp.name, shp)
-repr(shp)
-
-for row in shp.get_rows(["SHAPE@"], as_dict=False, where_clause=f"{shp.OIDField} < 10"):
-    row.keys()
