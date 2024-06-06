@@ -13,8 +13,8 @@ from utils.reloader import import_tools
 import utils.archelp
 reload(utils.archelp)
 
-import utils.models.tool
-reload(utils.models.tool)
+import utils.tool
+reload(utils.tool)
 
 TOOLS = \
 {
