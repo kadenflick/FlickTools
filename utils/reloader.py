@@ -1,7 +1,7 @@
 from importlib import reload, import_module
 from traceback import format_exc
 from typing import Dict
-from utils.models.tool import Tool
+from utils.tool import Tool
 
 def build_dev_error(label: str, desc: str):
     class Development(object):
