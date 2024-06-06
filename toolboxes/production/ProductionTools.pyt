@@ -20,7 +20,7 @@ TOOLS = \
 {
     "tools.prod":
         [
-            "Tool",
+            "VertexBuffer",
         ]
 }
 
@@ -32,8 +32,8 @@ class Toolbox(object):
         """Define the toolbox (the name of the toolbox is the name of the
         .pyt file)."""
         
-        self.label = "Toolbox"
-        self.alias = "Toolbox"
+        self.label = "Production Tools"
+        self.alias = self.label.replace(" ", "")
         
         # List of tool classes associated with this toolbox
         self.tools = IMPORTS
