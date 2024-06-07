@@ -72,9 +72,19 @@ class Table(DescribeModel):
             ]
         return
     
-    def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
-        """ Get rows from table takes field list and kwags for search cursor"""
+    def _validate_fields(self, fields: list[str]) -> bool:
+        """ Validate field list for cursors """
         if fields != ["*"] and not all([field in self.fieldnames + self.cursor_tokens for field in fields]):
+            return False
+        return True
+    
+    def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
+        """ Get rows from a table 
+        fields: list of fields to return
+        as_dict: return rows as dict if True
+        kwargs: See arcpy.da.SearchCursor for kwargs
+        """
+        if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         with arcpy.da.SearchCursor(self.featurepath, fields, **kwargs) as cursor:
             for row in cursor:
@@ -83,26 +93,48 @@ class Table(DescribeModel):
                 else:
                     yield row
                     
-    def update_rows(self, fields: list[str], key: str, values: dict[str: ...], **kwargs):
+    def update_rows(self, key: str, values: dict[str: ...], **kwargs) -> None:
         """ Update rows in table
-        fields: list of fields to update
         key: field to use as key for update (must be in fields)
-        values: dict of key value pairs to update [field: value]
+        values: dict of key value pairs to update [fieldname/token: value]
+        kwargs: See arcpy.da.UpdateCursor for kwargs
+        """
+        if not self._validate_fields(values.keys()) or not self._validate_fields([key]):
+            raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        if key not in values.keys():
+            raise ValueError(f"Key must be in {values.keys()}")
+        with arcpy.da.UpdateCursor(self.featurepath, list(values.keys()), **kwargs) as cursor:
+            for row in cursor:
+                row_dict = dict(zip(list(values.keys()), row))
+                if row_dict[key] in values.keys():
+                    cursor.updateRow([values[field] for field in values.keys()])
+        return
+    
+    def insert_rows(self, fields: list[str], values: list[dict[str: ...]], **kwargs) -> None:
+        """ Insert rows into table
+        fields: list of fields to insert
+        values: list of dicts with key value pairs to insert [field: value]
         """
         if not all([field in self.fieldnames + self.cursor_tokens for field in fields]):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        if key not in fields:
-            raise ValueError(f"Key must be in {fields}")
-        if not all([field in fields for field in values.keys()]):
-            raise ValueError(f"Values must be in {fields}")
-        with arcpy.da.UpdateCursor(self.featurepath, fields, **kwargs) as cursor:
-            for row, value in zip(cursor, values):
-                row = value
-                cursor.updateRow(row)
+        with arcpy.da.InsertCursor(self.featurepath, fields, **kwargs) as cursor:
+            for value in values:
+                cursor.insertRow([value[field] for field in fields])
         return
     
+    def add_field(self, field_name: str, **kwargs) -> None:
+        """ Add a field to the table 
+        field_name: name of the field to add
+        kwargs: See arcpy.management.AddField for kwargs
+        """
+        arcpy.AddField_management(self.featurepath, field_name, **kwargs)
+        return
+    
+    
+    
     def __iter__(self):
-        return self.get_rows(["*"], as_dict=True)
+        for row in self.get_rows(["*"]):
+            yield row
     
     def __len__(self):
         return len([i for i in self.get_rows[f"{self.OIDField}"]])
