@@ -123,13 +123,39 @@ class Table(DescribeModel):
         """ Insert rows into table
         fields: list of fields to insert
         values: list of dicts with key value pairs to insert [field: value]
+        return: number of rows inserted
         """
-        if not all([field in self.fieldnames + self.cursor_tokens for field in fields]):
+        if not values:
+            raise ValueError("Values must be provided")
+        fields = list(list(values.values())[0].keys())
+        if self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        
+        insert_count = 0
         with arcpy.da.InsertCursor(self.featurepath, fields, **kwargs) as cursor:
             for value in values:
                 cursor.insertRow([value[field] for field in fields])
-        return
+                insert_count += 1
+        self.record_count += insert_count
+        return insert_count
+    
+    def delete_rows(self, key: str, values: list[Any], **kwargs) -> int:
+        """ Delete rows from table
+        key: field to use as key for delete (must be in fields)
+        values: list of values to delete
+        kwargs: See arcpy.da.UpdateCursor for kwargs
+        return: number of rows deleted
+        """
+        if not values:
+            raise ValueError("Values must be provided")
+        delete_count = 0
+        with arcpy.da.UpdateCursor(self.featurepath, [key], **kwargs) as cursor:
+            for row in cursor:
+                if row[0] in values:
+                    cursor.deleteRow()
+                    delete_count += 1
+        self.record_count -= delete_count
+        return delete_count
     
     def add_field(self, field_name: str, **kwargs) -> None:
         """ Add a field to the table 
@@ -137,9 +163,8 @@ class Table(DescribeModel):
         kwargs: See arcpy.management.AddField for kwargs
         """
         arcpy.AddField_management(self.featurepath, field_name, **kwargs)
+        self.update()
         return
-    
-    
     
     def __iter__(self):
         for row in self.get_rows(["*"]):
