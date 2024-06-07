@@ -56,6 +56,9 @@ class Table(DescribeModel):
         self.record_count: int = len(self)
         self.fields: list[arcpy.Field] = self.describe.fields
         self.fieldnames: list[str] = [field.name for field in self.fields]
+        if hasattr(self.describe, "shapeFieldName"):
+            shape_idx = self.fieldnames.index(self.describe.shapeFieldName)
+            self.fieldnames[shape_idx] = "SHAPE@"   # Default to include full shape
         self.indexes: list[arcpy.Index] = self.describe.indexes
         self.OIDField: str = self.describe.OIDFieldName
         self.cursor_tokens: list[str] = \
