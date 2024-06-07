@@ -46,14 +46,12 @@ class DescribeModel:
     def __str__(self):
         return f"{type(self).__name__}: {self.basename}"
 
-
 ## TABLE LIKE OBJECTS
 
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     def __init__(self, tablepath: os.PathLike):
         super().__init__(tablepath)
-        self.record_count: int = len(self)
         self.fields: list[arcpy.Field] = self.describe.fields
         self.fieldnames: list[str] = [field.name for field in self.fields]
         if hasattr(self.describe, "shapeFieldName"):
@@ -71,6 +69,7 @@ class Table(DescribeModel):
                 "OID@",
                 "SUBTYPE@",
             ]
+        self.record_count: int = len(self)
         return
     
     def _validate_fields(self, fields: list[str]) -> bool:
