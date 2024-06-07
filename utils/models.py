@@ -6,9 +6,7 @@ from typing import Any, Generator
 
 class DescribeModel:
     """ Base object for models """
-    
-    DATATYPE: str = "Describe Model"
-    
+        
     def __init__(self, featurepath: os.PathLike):
         self.featurepath = featurepath
         desc = self._validate()
@@ -35,25 +33,23 @@ class DescribeModel:
             # Get Describe object
             desc = arcpy.Describe(self.featurepath)
             # Raise TypeError if the datatype is not the expected datatype
-            if desc.dataType != self.DATATYPE and self.DATATYPE != "Describe Model":
-                raise TypeError(f"{desc.baseName} is {desc.dataType}, must be {self.DATATYPE}")
+            if desc.dataType != type(self).__name__ and type(self).__name__ != "Describe Model":
+                raise TypeError(f"{desc.baseName} is {desc.dataType}, must be {type(self).__name__}")
             return desc
         
         raise FileNotFoundError(f"{self.featurepath} does not exist")
     
     def __repr__(self):
-        return f"<{self.DATATYPE}: {self.basename} @ {hex(id(self))}>"
+        return f"<{type(self).__name__}: {self.basename} @ {hex(id(self))}>"
     
     def __str__(self):
-        return f"{self.DATATYPE}: {self.basename}"
+        return f"{type(self).__name__}: {self.basename}"
 
 
 ## TABLE LIKE OBJECTS
 
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
-    DATATYPE: str = "Table"
-
     def __init__(self, tablepath: os.PathLike):
         super().__init__(tablepath)
         self.record_count: int = len(self)
@@ -204,9 +200,7 @@ class Table(DescribeModel):
         return
 
 class FeatureClass(Table):
-    """ Wrapper for basic FeatureClass operations """
-    DATATYPE: str = "FeatureClass"
-    
+    """ Wrapper for basic FeatureClass operations """    
     def __init__(self, shppath: os.PathLike):
         super().__init__(shppath)
         self.spatialReference: arcpy.SpatialReference = self.describe.spatialReference
@@ -233,15 +227,11 @@ class FeatureClass(Table):
         yield from self.get_rows(["SHAPE@"])
 class ShapeFile(FeatureClass):
     """ Wraper for basic Shapefile operations"""
-    DATATYPE: str = "ShapeFile"
 
 ## END TABLE LIKE OBJECTS
 
 ## GEODATABASE LIKE OBJECTS
 class Dataset(DescribeModel):
     """ Wrapper for basic Dataset operations """
-    DATATYPE: str = "Dataset"
-
 class GeoDatabase(DescribeModel):
     """ Wrapper for basic GeoDatabase operations """
-    DATATYPE: str = "GeoDatabase"
