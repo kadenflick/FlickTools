@@ -171,9 +171,8 @@ class Table(DescribeModel):
         return
     
     def __iter__(self):
-        for row in self.get_rows(["*"]):
-            yield row
-    
+        yield from self.get_rows(["*"], as_dict=True)
+        
     def __len__(self):
         if hasattr(self, "record_count"):
             return self.record_count
