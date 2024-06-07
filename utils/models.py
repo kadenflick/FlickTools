@@ -79,7 +79,8 @@ class Table(DescribeModel):
             return False
         return True
     
-    def get_row_template(self) -> dict[str, Any]:
+    @property
+    def row_template(self) -> dict[str, Any]:
         """ Get a template for a row """
         return dict(zip(self.fieldnames, [None for i in range(len(self.fieldnames))]))
     
