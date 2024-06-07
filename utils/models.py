@@ -119,7 +119,7 @@ class Table(DescribeModel):
                     update_count += 1
         return update_count
     
-    def insert_rows(self, fields: list[str], values: list[dict[str: ...]], **kwargs) -> None:
+    def insert_rows(self, values: dict[Any, dict[str, Any]], **kwargs) -> int:
         """ Insert rows into table
         fields: list of fields to insert
         values: list of dicts with key value pairs to insert [field: value]
