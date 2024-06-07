@@ -92,6 +92,8 @@ class Table(DescribeModel):
                 if as_dict:
                     yield dict(zip(fields, row))
                 else:
+                    if len(fields) == 1:
+                        yield row[0]
                     yield row
                     
     def update_rows(self, key: str, values: dict[Any, dict[str, Any]], **kwargs) -> int:
