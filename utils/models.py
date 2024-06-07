@@ -194,17 +194,17 @@ class Table(DescribeModel):
         self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
         return
     
-    def __delitem__(self, idx: int):
-        row_dict = dict(zip(self.fieldnames, self[idx]))
-        self.delete_rows(self.OIDField, [row_dict[self.OIDField]])
-        return
+    def __delitem__(self, idx: int | str):
+        if isinstance(idx, int):
+            row_dict = dict(zip(self.fieldnames, self[idx]))
+            self.delete_rows(self.OIDField, [row_dict[self.OIDField]])
+            return
+        if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
+            arcpy.management.DeleteField(self.featurepath, idx)
+            self.update()
+            return
+        raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
-    def append(self, row: list[list[Any]]):
-        if len(row) != len(self.fieldnames):
-            raise ValueError(f"Row must have {len(self.fieldnames)} items")
-        self.insert_rows([{field: value for field, value in zip(self.fieldnames, row)}])
-        return
-
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
     def __init__(self, shppath: os.PathLike):
