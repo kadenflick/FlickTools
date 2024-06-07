@@ -56,6 +56,7 @@ class Table(DescribeModel):
 
     def __init__(self, tablepath: os.PathLike):
         super().__init__(tablepath)
+        self.record_count: int = len(self)
         self.fields: list[arcpy.Field] = self.describe.fields
         self.fieldnames: list[str] = [field.name for field in self.fields]
         self.indexes: list[arcpy.Index] = self.describe.indexes
@@ -137,7 +138,9 @@ class Table(DescribeModel):
             yield row
     
     def __len__(self):
-        return len([i for i in self.get_rows[f"{self.OIDField}"]])
+        if hasattr(self, "record_count"):
+            return self.record_count
+        return len([i for i in self])
     
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """
