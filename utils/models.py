@@ -10,7 +10,7 @@ class DescribeModel:
     def __init__(self, featurepath: os.PathLike):
         self.featurepath = featurepath
         desc = self._validate()
-        
+                
         # Set General Properties
         self.describe: Any = desc
         self.basename: str = desc.baseName
@@ -19,6 +19,7 @@ class DescribeModel:
         self.catalogpath: os.PathLike = desc.catalogPath
         self.extension: str = desc.extension
         self.type: str = desc.dataType
+        self.data = None
         return
     
     def update(self):
@@ -178,9 +179,15 @@ class Table(DescribeModel):
             return self.record_count
         return len([i for i in self])
     
-    def __getitem__(self, idx: int):
-        items = [row for row in self.get_rows(["*"])]
-        return items[idx]
+    def __getitem__(self, idx: int | str):
+        if isinstance(idx, int):
+            if not self.data:
+                self.data = [row for row in self]
+            return self.data[idx] 
+        elif isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
+            return [v for v in self.get_rows([idx])]
+        
+        raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
     def __setitem__(self, idx: int, values: list):
         if len(values) != len(self.fieldnames):
