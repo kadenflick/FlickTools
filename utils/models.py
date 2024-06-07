@@ -119,7 +119,7 @@ class Table(DescribeModel):
                     update_count += 1
         return update_count
     
-    def insert_rows(self, values: dict[Any, dict[str, Any]], **kwargs) -> int:
+    def insert_rows(self, values: list[dict[Any, dict[str, Any]]], **kwargs) -> int:
         """ Insert rows into table
         fields: list of fields to insert
         values: list of dicts with key value pairs to insert [field: value]
@@ -127,8 +127,8 @@ class Table(DescribeModel):
         """
         if not values:
             raise ValueError("Values must be provided")
-        fields = list(list(values.values())[0].keys())
-        if self._validate_fields(fields):
+        fields = list(values[0].keys())
+        if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
         insert_count = 0
