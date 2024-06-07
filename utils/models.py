@@ -79,6 +79,10 @@ class Table(DescribeModel):
             return False
         return True
     
+    def get_row_template(self) -> dict[str, Any]:
+        """ Get a template for a row """
+        return dict(zip(self.fieldnames, [None for i in range(len(self.fieldnames))]))
+    
     def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
         fields: list of fields to return
