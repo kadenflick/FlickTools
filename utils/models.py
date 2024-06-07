@@ -227,10 +227,7 @@ class FeatureClass(Table):
                 "SHAPE@LENGTH",
             ]
         )
-    
-    def get_shapes(self) -> Generator[arcpy.Geometry, None, None]:
-        """ Get shapes from feature class """
-        yield from self.get_rows(["SHAPE@"])
+      
 class ShapeFile(FeatureClass):
     """ Wraper for basic Shapefile operations"""
 
