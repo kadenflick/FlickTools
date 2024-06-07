@@ -191,11 +191,17 @@ class Table(DescribeModel):
         
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
-    def __setitem__(self, idx: int, values: list):
-        if len(values) != len(self.fieldnames):
-            raise ValueError(f"Value must have {len(self.fieldnames)} items")
-        self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
-        return
+    def __setitem__(self, idx: int | str, values: list | Any):
+        if type(idx) == int and len(values) == len(self.fieldnames):
+            self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
+            return
+        if type(idx) == str and idx in self.fieldnames + self.cursor_tokens:
+            with arcpy.da.UpdateCursor(self.featurepath, [idx], where_clause=self.query) as cursor:
+                for row in cursor:
+                    row[0] = values
+                    cursor.updateRow(row)
+            return
+        raise ValueError(f"{idx} not in {self.fieldnames + self.cursor_tokens} or index is out of range")
     
     def __delitem__(self, idx: int | str):
         if isinstance(idx, int):
