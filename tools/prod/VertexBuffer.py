@@ -99,7 +99,7 @@ class VertexBuffer(Tool):
         
         buffers: list[arcpy.Polygon] = []
         
-        total = len([i for i in features.get_rows([f"{features.OIDField}"])])
+        total = len(features)
         index = 0
         arcpy.SetProgressor("step", "Buffering Features", index, total, 1)
         for feature in features.get_rows(["SHAPE@"], where_clause=query):
