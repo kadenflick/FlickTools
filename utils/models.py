@@ -175,6 +175,27 @@ class Table(DescribeModel):
             return self.record_count
         return len([i for i in self])
     
+    def __getitem__(self, idx: int):
+        items = [row for row in self.get_rows(["*"])]
+        return items[idx]
+    
+    def __setitem__(self, idx: int, values: list):
+        if len(values) != len(self.fieldnames):
+            raise ValueError(f"Value must have {len(self.fieldnames)} items")
+        self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
+        return
+    
+    def __delitem__(self, idx: int):
+        row_dict = dict(zip(self.fieldnames, self[idx]))
+        self.delete_rows(self.OIDField, [row_dict[self.OIDField]])
+        return
+    
+    def append(self, row: list[list[Any]]):
+        if len(row) != len(self.fieldnames):
+            raise ValueError(f"Row must have {len(self.fieldnames)} items")
+        self.insert_rows([{field: value for field, value in zip(self.fieldnames, row)}])
+        return
+
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """
     DATATYPE: str = "FeatureClass"
