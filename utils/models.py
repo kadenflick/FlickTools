@@ -52,6 +52,8 @@ class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     def __init__(self, tablepath: os.PathLike):
         super().__init__(tablepath)
+        
+        self._query: str = None
         self.fields: list[arcpy.Field] = self.describe.fields
         self.fieldnames: list[str] = [field.name for field in self.fields]
         if hasattr(self.describe, "shapeFieldName"):
@@ -83,6 +85,30 @@ class Table(DescribeModel):
         """ Get a template for a row """
         return dict(zip(self.fieldnames, [None for i in range(len(self.fieldnames))]))
     
+    @property
+    def query(self) -> str:
+        """ Get the query string """
+        return self._query
+    
+    @query.setter
+    def query(self, query_string: str):
+        """ Set the query string """
+        try:
+            with arcpy.da.SearchCursor(self.featurepath, [self.OIDField], where_clause=query_string) as cur:
+                cur.fields
+        except Exception as e:
+            raise ValueError(f"Invalid query: {query_string}")
+        self._query = query_string
+        self.record_count = len([i for i in self])
+        return
+    
+    @query.deleter
+    def query(self):
+        """ Delete the query string """
+        self._query = None
+        self.record_count = len([i for i in self])
+        return
+    
     def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
         fields: list of fields to return
@@ -93,7 +119,13 @@ class Table(DescribeModel):
             fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        with arcpy.da.SearchCursor(self.featurepath, fields, **kwargs) as cursor:
+        
+        query = self._query
+        if 'where_clause' in kwargs:
+            query = kwargs['where_clause']
+            del kwargs['where_clause']
+        
+        with arcpy.da.SearchCursor(self.featurepath, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
                 if as_dict:
                     yield dict(zip(fields, row))
@@ -117,8 +149,13 @@ class Table(DescribeModel):
             if list(val.keys()) != fields:
                 raise ValueError(f"Fields must match for all values in values dict")
         
+        query = self._query
+        if 'where_clause' in kwargs:
+            query = kwargs['where_clause']
+            del kwargs['where_clause']
+        
         update_count = 0
-        with arcpy.da.UpdateCursor(self.featurepath, fields, **kwargs) as cursor:
+        with arcpy.da.UpdateCursor(self.featurepath, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
                 row_dict = dict(zip(fields, row))
                 if row_dict[key] in values.keys():
