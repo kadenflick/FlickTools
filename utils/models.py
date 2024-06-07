@@ -94,22 +94,30 @@ class Table(DescribeModel):
                 else:
                     yield row
                     
-    def update_rows(self, key: str, values: dict[str: ...], **kwargs) -> None:
+    def update_rows(self, key: str, values: dict[Any, dict[str, Any]], **kwargs) -> int:
         """ Update rows in table
         key: field to use as key for update (must be in fields)
         values: dict of key value pairs to update [fieldname/token: value]
         kwargs: See arcpy.da.UpdateCursor for kwargs
+        return: number of rows updated
         """
-        if not self._validate_fields(values.keys()) or not self._validate_fields([key]):
+        if not values:
+            raise ValueError("Values must be provided")
+        fields = list(list(values.values())[0].keys())
+        if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        if key not in values.keys():
-            raise ValueError(f"Key must be in {values.keys()}")
-        with arcpy.da.UpdateCursor(self.featurepath, list(values.keys()), **kwargs) as cursor:
+        for val in values.values():
+            if list(val.keys()) != fields:
+                raise ValueError(f"Fields must match for all values in values dict")
+        
+        update_count = 0
+        with arcpy.da.UpdateCursor(self.featurepath, fields, **kwargs) as cursor:
             for row in cursor:
-                row_dict = dict(zip(list(values.keys()), row))
+                row_dict = dict(zip(fields, row))
                 if row_dict[key] in values.keys():
-                    cursor.updateRow([values[field] for field in values.keys()])
-        return
+                    cursor.updateRow(list(values[row_dict[key]].values()))
+                    update_count += 1
+        return update_count
     
     def insert_rows(self, fields: list[str], values: list[dict[str: ...]], **kwargs) -> None:
         """ Insert rows into table
