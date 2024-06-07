@@ -87,6 +87,8 @@ class Table(DescribeModel):
         as_dict: return rows as dict if True
         kwargs: See arcpy.da.SearchCursor for kwargs
         """
+        if fields == ["*"]:
+            fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         with arcpy.da.SearchCursor(self.featurepath, fields, **kwargs) as cursor:
@@ -94,9 +96,8 @@ class Table(DescribeModel):
                 if as_dict:
                     yield dict(zip(fields, row))
                 else:
-                    if len(fields) == 1:
-                        yield row[0]
-                    yield row
+                    if len(fields) == 1: yield row[0]
+                    else: yield row
                     
     def update_rows(self, key: str, values: dict[Any, dict[str, Any]], **kwargs) -> int:
         """ Update rows in table
