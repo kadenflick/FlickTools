@@ -74,6 +74,7 @@ class Table(DescribeModel):
                 "SUBTYPE@",
             ]
         self.record_count: int = len(self)
+        self._total_count: int = self.record_count
         return
     
     def _validate_fields(self, fields: list[str]) -> bool:
@@ -108,7 +109,8 @@ class Table(DescribeModel):
     def query(self):
         """ Delete the query string """
         self._query = None
-        self.record_count = len([i for i in self])
+        self.data = None
+        self.record_count = self._total_count
         return
     
     def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
@@ -183,6 +185,7 @@ class Table(DescribeModel):
                 cursor.insertRow([value[field] for field in fields])
                 insert_count += 1
         self.record_count += insert_count
+        self._total_count += insert_count
         return insert_count
     
     def delete_rows(self, key: str, values: list[Any], **kwargs) -> int:
@@ -201,6 +204,7 @@ class Table(DescribeModel):
                     cursor.deleteRow()
                     delete_count += 1
         self.record_count -= delete_count
+        self._total_count -= delete_count
         return delete_count
     
     def add_field(self, field_name: str, **kwargs) -> None:
