@@ -113,7 +113,7 @@ class Table(DescribeModel):
         self.record_count = self._total_count
         return
     
-    def get_rows(self, fields: list[str], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
+    def get_rows(self, fields: list[str] = ["*"], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
         fields: list of fields to return
         as_dict: return rows as dict if True
