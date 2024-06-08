@@ -219,7 +219,7 @@ class Table(DescribeModel):
         return
     
     def __iter__(self):
-        yield from self.get_rows(["*"], as_dict=True)
+        yield from self.get_rows(self.fieldnames, as_dict=True)
         
     def __len__(self):
         if hasattr(self, "record_count"):
