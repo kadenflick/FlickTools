@@ -20,3 +20,17 @@ class Parameters(object):
 def sanitize_filename(filename: str) -> str:
     """ Sanitize a filename """
     return "".join([char for char in filename if char.isalnum() or char in [" ", "_", "-"]])
+
+def message(message: str, severity: str = "info") -> None:
+    """ Print a message """
+    match severity.lower():
+        case "info":
+            arcpy.AddMessage(message)
+            print(f"info: {message}")
+        case "warning":
+            arcpy.AddWarning(message)
+            print(f"warning: {message}")
+        case "error":
+            arcpy.AddError(message)
+            print(f"error: {message}")
+    return
