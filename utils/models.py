@@ -254,15 +254,20 @@ class Table(DescribeModel):
             return
         raise ValueError(f"{idx} not in {self.fieldnames + self.cursor_tokens} or index is out of range")
     
-    def __delitem__(self, idx: int | str):
+    def __delitem__(self, idx: int | str | list[str]):
         if isinstance(idx, int):
-            row_dict = dict(zip(self.fieldnames, self[idx]))
-            self.delete_rows(self.OIDField, [row_dict[self.OIDField]])
+            self.delete_rows(self.OIDField, self[idx][self.OIDField])
             return
-        if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
-            self.delete_fields(self.featurepath, [idx])
+        if isinstance(idx, str) and idx in self.fieldnames:
+            self.delete_fields([idx])
             self.update()
             return
+        if isinstance(idx, list):
+            if all([field in self.fieldnames for field in idx]):
+                self.delete_fields(idx)
+                return
+            else:
+                raise ValueError(f"{idx} not subset of {self.fieldnames}")
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
 class FeatureClass(Table):
