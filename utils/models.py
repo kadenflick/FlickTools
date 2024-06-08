@@ -2,6 +2,8 @@ import arcpy
 import os
 from typing import Any, Generator
 
+from archelp import message
+
 # Get class names implemented in current module
 
 class DescribeModel:
@@ -97,7 +99,7 @@ class Table(DescribeModel):
             with arcpy.da.SearchCursor(self.featurepath, [self.OIDField], where_clause=query_string) as cur:
                 cur.fields
         except Exception as e:
-            raise ValueError(f"Invalid query: {query_string}")
+            message(f"Invalid query string ({query_string})", "warning")
         self._query = query_string
         self.record_count = len([i for i in self])
         return
