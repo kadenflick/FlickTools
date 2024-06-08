@@ -234,7 +234,7 @@ class Table(DescribeModel):
     
     def __getitem__(self, idx: int | str):
         if isinstance(idx, int):
-            if not self.data:
+            if not self.data or len(self.data) != self.record_count:
                 self.data = [row for row in self]
             return self.data[idx] 
         elif isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
