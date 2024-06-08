@@ -206,7 +206,15 @@ class Table(DescribeModel):
         field_name: name of the field to add
         kwargs: See arcpy.management.AddField for kwargs
         """
-        arcpy.AddField_management(self.featurepath, field_name, **kwargs)
+        arcpy.management.AddField(self.featurepath, field_name, **kwargs)
+        self.update()
+        return
+    
+    def delete_fields(self, field_names: list[str]) -> None:
+        """ Delete a field from the table 
+        field_name: name of the field to delete
+        """
+        arcpy.management.DeleteField(self.featurepath, field_names)
         self.update()
         return
     
@@ -246,7 +254,7 @@ class Table(DescribeModel):
             self.delete_rows(self.OIDField, [row_dict[self.OIDField]])
             return
         if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
-            arcpy.management.DeleteField(self.featurepath, idx)
+            self.delete_fields(self.featurepath, [idx])
             self.update()
             return
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
