@@ -48,8 +48,6 @@ class DescribeModel:
     def __str__(self):
         return f"{type(self).__name__}: {self.basename}"
 
-## TABLE LIKE OBJECTS
-
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     def __init__(self, tablepath: os.PathLike):
@@ -269,7 +267,7 @@ class Table(DescribeModel):
             else:
                 raise ValueError(f"{idx} not subset of {self.fieldnames}")
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
-    
+
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
     def __init__(self, shppath: os.PathLike):
@@ -296,9 +294,6 @@ class FeatureClass(Table):
 class ShapeFile(FeatureClass):
     """ Wraper for basic Shapefile operations"""
 
-## END TABLE LIKE OBJECTS
-
-## GEODATABASE LIKE OBJECTS
 class Dataset(DescribeModel):
     """ Wrapper for basic Dataset operations """
 class GeoDatabase(DescribeModel):
