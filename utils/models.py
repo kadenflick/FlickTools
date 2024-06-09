@@ -241,10 +241,10 @@ class Table(DescribeModel):
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
     def __setitem__(self, idx: int | str, values: list | Any):
-        if type(idx) == int and len(values) == len(self.fieldnames):
+        if isinstance(idx, int) and len(values) == len(self.fieldnames):
             self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
             return
-        if type(idx) == str and idx in self.fieldnames + self.cursor_tokens:
+        if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
             with arcpy.da.UpdateCursor(self.featurepath, [idx], where_clause=self.query) as cursor:
                 for row in cursor:
                     row[0] = values
