@@ -37,3 +37,36 @@ def message(message: str, severity: str = "info") -> None:
             arcpy.AddError(message)
             print(f"error: {message}")
     return
+
+class Network:
+    def __init__(self, nodes: dict[str, arcpy.PointGeometry], edges: dict[str, arcpy.Polyline]) -> None:
+        self.nodes = nodes
+        self.edges = edges
+        self.node_connections, self.edge_connections = self._build_network()
+        return
+    
+    def _build_network(self):
+        edge_connections: dict[str, tuple[str]] = {}
+        node_connections: dict[str, list[str]] = {}
+        for edge_id, edge in self.edges.items():
+            node_left, node_right = None, None
+            for node_id, node in self.nodes.items():
+                if edge.disjoint(node): continue
+                if edge.firstPoint == node: node_left = node_id
+                elif edge.lastPoint == node: node_right = node_id
+                if node_left and node_right: break
+            edge_connections[edge_id] = (node_left, node_right)
+            node_connections.setdefault(node_left, []).append(edge_id)
+            node_connections.setdefault(node_right, []).append(edge_id)
+        return node_connections, edge_connections
+
+    def get_node(self, node_id: str) -> dict[str, str]:
+        """ Gets a node dictionary where the keys are edge ids
+        and the values are the connected node ids"""
+        if node_id not in self.node_connections:
+            raise ValueError(f"Node: {node_id} not in network!")
+        connection_dict = {}
+        for edge in self.node_connections[node_id]:
+            node = [n for n in edge if n != node_id][0]
+            connection_dict[edge] = node
+        
