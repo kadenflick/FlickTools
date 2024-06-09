@@ -17,6 +17,9 @@ class Parameters(object):
             yield value
         return
     
+    def __getitem__(self, key):
+        return self.__dict__[key]
+    
 def sanitize_filename(filename: str) -> str:
     """ Sanitize a filename """
     return "".join([char for char in filename if char.isalnum() or char in [" ", "_", "-"]])
