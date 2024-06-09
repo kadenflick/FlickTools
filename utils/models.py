@@ -238,6 +238,10 @@ class Table(DescribeModel):
         elif isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
             return [v for v in self.get_rows([idx])]
         
+        elif isinstance(idx, list) and all([isinstance(f, str) for f in idx]):
+            if set(idx).issubset(self.fieldnames + self.cursor_tokens):
+                return self.get_rows(idx)
+        
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
     
     def __setitem__(self, idx: int | str, values: list | Any):
