@@ -4,8 +4,6 @@ from typing import Any, Generator
 
 from archelp import message
 
-# Get class names implemented in current module
-
 class DescribeModel:
     """ Base object for models """
         
@@ -234,7 +232,8 @@ class Table(DescribeModel):
         if isinstance(idx, int):
             if not self.data or len(self.data) != self.record_count:
                 self.data = [row for row in self]
-            return self.data[idx] 
+            return self.data[idx]
+        
         elif isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
             return [v for v in self.get_rows([idx])]
         
