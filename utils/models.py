@@ -4,6 +4,8 @@ from typing import Any, Generator
 
 from archelp import message
 
+ALL_FIELDS = object()
+
 class DescribeModel:
     """ Base object for models """
         
@@ -109,13 +111,13 @@ class Table(DescribeModel):
         self.record_count = self._total_count
         return
     
-    def get_rows(self, fields: list[str] = ["*"], as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
+    def get_rows(self, fields: list[str] = ALL_FIELDS, as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
         fields: list of fields to return
         as_dict: return rows as dict if True
         kwargs: See arcpy.da.SearchCursor for kwargs
         """
-        if fields == ["*"]:
+        if fields == ALL_FIELDS or fields == ["*"]:
             fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
