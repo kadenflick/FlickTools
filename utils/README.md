@@ -7,3 +7,5 @@ TODO:
 [ ] - If cache is present, calls to query property will by default update the cache
 
 [ ] - Test if running update operations on cached data and not writing changes until a `commit()` call is made is viable. This could come into conflict with the query property overwriting the cache, so we might need to have a secondary queried cache that maps to the main cache.
+
+[ ] - Allow creation of Table objects with valid workspace paths thatsont currently exist. Overload the constructor to try and create an object in the workspace with the specified data type based on the subclass constructor that is called. This will likely have to be implemented in each subclass before `super().__init__()` call because the arcpy constructor function for each type require different parameters. (e.g. FeatureClass(<path>, shapeType='Polygon', fields=[<Field>, ...])
