@@ -13,14 +13,16 @@ class VersionControl(Tool):
             ["git", "branch", "-a"], 
             cwd=WORKDIR, 
             capture_output=True,
-            text=True
+            text=True,
+            shell=True,
         ).stdout.strip().replace('*',' ').split("\n  ")
     ACTIVE_BRANCH = \
         subprocess.run(
             ["git", "branch", "--show-current"], 
             cwd=WORKDIR, 
             capture_output=True,
-            text=True
+            text=True,
+            shell=True,
         ).stdout.strip()
         
     def __init__(self) -> None:
@@ -75,6 +77,8 @@ class VersionControl(Tool):
         else:
             params.pull.enabled = True
         
+        params.status.value = self.get_status()
+        
         return
     
     def execute(self, parameters:list, messages:list) -> None:
@@ -96,7 +100,8 @@ class VersionControl(Tool):
                     ["git", "checkout", params.branch], 
                     cwd=VersionControl.WORKDIR, 
                     capture_output=True, 
-                    text=True
+                    text=True,
+                    shell=True,
                 )
             archelp.message(result.stdout)
             if result.stderr:
@@ -111,7 +116,8 @@ class VersionControl(Tool):
                     ["git", "status"], 
                     cwd=VersionControl.WORKDIR, 
                     capture_output=True,
-                    text=True
+                    text=True,
+                    shell=True,
                 ).stdout.strip()
             return status
         except subprocess.CalledProcessError as e:
