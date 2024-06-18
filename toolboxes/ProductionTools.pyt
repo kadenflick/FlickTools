@@ -21,7 +21,11 @@ TOOLS = \
     "tools.prod":
         [
             "VertexBuffer",
-        ]
+        ],
+    "tools.utility":
+        [
+            "VersionControl",
+        ],
 }
 
 IMPORTS = import_tools(TOOLS)
