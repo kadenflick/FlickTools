@@ -97,7 +97,7 @@ class VersionControl(Tool):
         elif VersionControl.ACTIVE_BRANCH != params.branch.value:
             result =\
                 subprocess.run(
-                    ["git", "checkout", params.branch], 
+                    ["git", "checkout", params.branch.value], 
                     cwd=VersionControl.WORKDIR, 
                     capture_output=True, 
                     text=True,
