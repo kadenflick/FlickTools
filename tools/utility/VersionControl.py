@@ -104,8 +104,6 @@ class VersionControl(Tool):
                     shell=True,
                 )
             archelp.message(result.stdout)
-            if result.stderr:
-                archelp.message(result.stderr, "error")
         
         archelp.message(self.get_status())
         
