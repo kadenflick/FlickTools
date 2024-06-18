@@ -84,7 +84,7 @@ class VersionControl(Tool):
     def execute(self, parameters:list, messages:list) -> None:
         params = archelp.Parameters(parameters)
         
-        if params.pull:
+        if params.pull.value and params.pull.enabled:
             result =\
                 subprocess.run(
                     ["git", "pull"], cwd=VersionControl.WORKDIR, 
