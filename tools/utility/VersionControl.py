@@ -39,7 +39,6 @@ class VersionControl(Tool):
             datatype="GPString",
             parameterType="Optional",
             direction="Input",
-            category=VersionControl.ACTIVE_BRANCH,
         )
         branch.value = VersionControl.ACTIVE_BRANCH
         branch.filter.type = "ValueList"
@@ -51,7 +50,6 @@ class VersionControl(Tool):
             datatype="GPString",
             parameterType="Optional",
             direction="Input",
-            category=VersionControl.ACTIVE_BRANCH,
         )
         status.controlCLSID='{E5456E51-0C41-4797-9EE4-5269820C6F0E}'
         status.value = self.get_status()
@@ -62,7 +60,6 @@ class VersionControl(Tool):
             datatype="GPBoolean",
             parameterType="Optional",
             direction="Input",
-            category=VersionControl.ACTIVE_BRANCH,
         )
         pull.value = True
         
