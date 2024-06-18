@@ -122,5 +122,3 @@ class VersionControl(Tool):
             return status
         except subprocess.CalledProcessError as e:
             return f"Error: {e}"
-        
-        return
