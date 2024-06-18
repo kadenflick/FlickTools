@@ -101,6 +101,9 @@ class VersionControl(Tool):
                     shell=True,
                 )
             archelp.message(result.stdout)
+        
+        self.project.updateToolboxes(self.project.toolboxes)
+        
         archelp.message(self.get_status())
         
     def get_status(self) -> str:
