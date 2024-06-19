@@ -9,8 +9,8 @@ ALL_FIELDS = object()
 class DescribeModel:
     """ Base object for models """
         
-    def __init__(self, featurepath: os.PathLike):
-        self.featurepath = featurepath
+    def __init__(self, path: os.PathLike):
+        self.path = path
         desc = self._validate()
                 
         # Set General Properties
@@ -21,26 +21,32 @@ class DescribeModel:
         self.catalogpath: os.PathLike = desc.catalogPath
         self.extension: str = desc.extension
         self.type: str = desc.dataType
-        self.data = None
+        self.data: dict[int, dict[str, Any]] = None
         return
     
     def update(self):
         """ Update the Describe object """
-        updates = self.__class__(self.featurepath)
-        self.__dict__.update(updates.__dict__)
+        new = self.__class__(self.path)
+        # Preserve a custom OIDField
+        if hasattr(new, "OIDField") and self.OIDField != new.OIDField:
+            new.OIDField = self.OIDField
+        # Preserve a custom query
+        if hasattr(new, "query") and self.query != new.query:
+            new.query = self.query
+        self.__dict__.update(new.__dict__)
         return
     
     def _validate(self):
         """ Validate the featurepath and return the Describe object """
-        if arcpy.Exists(self.featurepath):
+        if arcpy.Exists(self.path):
             # Get Describe object
-            desc = arcpy.Describe(self.featurepath)
+            desc = arcpy.Describe(self.path)
             # Raise TypeError if the datatype is not the expected datatype
             if desc.dataType != type(self).__name__ and type(self).__name__ != "Describe Model":
                 raise TypeError(f"{desc.baseName} is {desc.dataType}, must be {type(self).__name__}")
             return desc
         
-        raise FileNotFoundError(f"{self.featurepath} does not exist")
+        raise FileNotFoundError(f"{self.path} does not exist")
     
     def __repr__(self):
         return f"<{type(self).__name__}: {self.basename} @ {hex(id(self))}>"
@@ -54,8 +60,8 @@ class Table(DescribeModel):
         super().__init__(tablepath)
         
         self._query: str = None
-        self.fields: list[arcpy.Field] = self.describe.fields
-        self.fieldnames: list[str] = [field.name for field in self.fields]
+        self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
+        self.fieldnames: list[str] = list(self.fields.keys())
         if hasattr(self.describe, "shapeFieldName"):
             shape_idx = self.fieldnames.index(self.describe.shapeFieldName)
             self.fieldnames[shape_idx] = "SHAPE@"   # Default to include full shape
@@ -70,9 +76,11 @@ class Table(DescribeModel):
                 "GLOBALID@",
                 "OID@",
                 "SUBTYPE@",
+                "*"
             ]
-        self.record_count: int = len(self)
-        self._total_count: int = self.record_count
+        self.queried: bool = False
+        self._queried_count: int = 0
+        self._oid_set = set(self[self.OIDField])
         return
     
     def _validate_fields(self, fields: list[str]) -> bool:
@@ -94,22 +102,37 @@ class Table(DescribeModel):
     @query.setter
     def query(self, query_string: str):
         """ Set the query string """
+        if not query_string:
+            del self.query
         try:
-            with arcpy.da.SearchCursor(self.featurepath, [self.OIDField], where_clause=query_string) as cur:
+            with arcpy.da.SearchCursor(self.path, [self.OIDField], where_clause=query_string) as cur:
                 cur.fields
         except Exception as e:
             message(f"Invalid query string ({query_string})", "warning")
         self._query = query_string
-        self.record_count = len([i for i in self])
+        self.data = [row for row in self]
+        self._queried_count = len(self.data)
+        self.queried = True
+        self._oid_set = set(self[self.OIDField])
         return
     
     @query.deleter
     def query(self):
         """ Delete the query string """
         self._query = None
+        self.queried = False
         self.data = None
-        self.record_count = self._total_count
+        self._oid_set = set(self[self.OIDField])
         return
+    
+    def set_oid_field(self, oid_field: str) -> None:
+        if oid_field in self.fieldnames:
+            found = set()
+            for v in self[oid_field]:
+                if v in found:
+                    raise ValueError(f"{oid_field} must be unique")
+                found.add(v)
+            self.OIDField = oid_field
     
     def get_rows(self, fields: list[str] = ALL_FIELDS, as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
@@ -127,7 +150,7 @@ class Table(DescribeModel):
             query = kwargs['where_clause']
             del kwargs['where_clause']
         
-        with arcpy.da.SearchCursor(self.featurepath, fields, where_clause=query, **kwargs) as cursor:
+        with arcpy.da.SearchCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
                 if as_dict:
                     yield dict(zip(fields, row))
@@ -157,13 +180,52 @@ class Table(DescribeModel):
             del kwargs['where_clause']
         
         update_count = 0
-        with arcpy.da.UpdateCursor(self.featurepath, fields, where_clause=query, **kwargs) as cursor:
+        with arcpy.da.UpdateCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
                 row_dict = dict(zip(fields, row))
                 if row_dict[key] in values.keys():
                     cursor.updateRow(list(values[row_dict[key]].values()))
                     update_count += 1
         return update_count
+    
+    def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
+        """ Internal cursor method to get cursor type
+        """
+        if fields is ALL_FIELDS or fields == ["*"]:
+            fields = self.fieldnames
+        if not self._validate_fields(fields):
+            raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        if cur_type == "update":
+            return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if cur_type == "search":
+            return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if cur_type == "insert":
+            return arcpy.da.InsertCursor(self.path, fields, **kwargs)
+        raise ValueError(f"Invalid cursor type {cur_type}")
+    
+    def update_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor:
+        """ Get an update cursor for the table
+        fields: list of fields to update
+        kwargs: See arcpy.da.UpdateCursor for kwargs
+        return: update cursor
+        """
+        return self._cursor("update", fields, **kwargs)
+    
+    def search_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.SearchCursor:
+        """ Get a search cursor for the table
+        fields: list of fields to return
+        kwargs: See arcpy.da.SearchCursor for kwargs
+        return: search cursor
+        """
+        return self._cursor("search", fields, **kwargs)
+    
+    def insert_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.InsertCursor:
+        """ Get an insert cursor for the table
+        fields: list of fields to insert
+        kwargs: See arcpy.da.InsertCursor for kwargs
+        return: insert cursor
+        """
+        return self._cursor("insert", fields, **kwargs)
     
     def insert_rows(self, values: list[dict[Any, dict[str, Any]]], **kwargs) -> int:
         """ Insert rows into table
@@ -178,12 +240,11 @@ class Table(DescribeModel):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
         insert_count = 0
-        with arcpy.da.InsertCursor(self.featurepath, fields, **kwargs) as cursor:
+        with arcpy.da.InsertCursor(self.path, fields, **kwargs) as cursor:
             for value in values:
                 cursor.insertRow([value[field] for field in fields])
                 insert_count += 1
-        self.record_count += insert_count
-        self._total_count += insert_count
+        self.update()
         return insert_count
     
     def delete_rows(self, key: str, values: list[Any], **kwargs) -> int:
@@ -196,13 +257,12 @@ class Table(DescribeModel):
         if not values:
             raise ValueError("Values must be provided")
         delete_count = 0
-        with arcpy.da.UpdateCursor(self.featurepath, [key], **kwargs) as cursor:
+        with arcpy.da.UpdateCursor(self.path, [key], **kwargs) as cursor:
             for row in cursor:
                 if row[0] in values:
                     cursor.deleteRow()
                     delete_count += 1
-        self.record_count -= delete_count
-        self._total_count -= delete_count
+        self.update()
         return delete_count
     
     def add_field(self, field_name: str, **kwargs) -> None:
@@ -210,7 +270,7 @@ class Table(DescribeModel):
         field_name: name of the field to add
         kwargs: See arcpy.management.AddField for kwargs
         """
-        arcpy.management.AddField(self.featurepath, field_name, **kwargs)
+        arcpy.management.AddField(self.path, field_name, **kwargs)
         self.update()
         return
     
@@ -218,7 +278,7 @@ class Table(DescribeModel):
         """ Delete a field from the table 
         field_name: name of the field to delete
         """
-        arcpy.management.DeleteField(self.featurepath, field_names)
+        arcpy.management.DeleteField(self.path, field_names)
         self.update()
         return
     
@@ -226,53 +286,76 @@ class Table(DescribeModel):
         yield from self.get_rows(self.fieldnames, as_dict=True)
         
     def __len__(self):
-        if hasattr(self, "record_count"):
-            return self.record_count
-        return len([i for i in self])
+        if self.queried:
+            return self._queried_count
+        return int(arcpy.management.GetCount(self.path).getOutput(0))
     
-    def __getitem__(self, idx: int | str):
+    def __getitem__(self, idx: int | str | list):
+        
         if isinstance(idx, int):
-            if not self.data or len(self.data) != self.record_count:
-                self.data = [row for row in self]
-            return self.data[idx]
+            if idx in self._oid_set:
+                return self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}").__next__()
+            raise KeyError(f"{idx} not in {self.name}.{self.OIDField}{f' with query: {self.query}' if self.query else ''}")
         
-        elif isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
-            return [v for v in self.get_rows([idx])]
+        if isinstance(idx, str):
+            if idx in self.fieldnames + self.cursor_tokens:
+                return [v for v in self.get_rows([idx])]
+            elif idx in self._oid_set:
+                return self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}").__next__()
+            raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
         
-        elif isinstance(idx, list) and all([isinstance(f, str) for f in idx]):
+        if isinstance(idx, list) and all([isinstance(f, str) for f in idx]):
             if set(idx).issubset(self.fieldnames + self.cursor_tokens):
-                return self.get_rows(idx)
-        
-        raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
+                return [v for v in self.get_rows(idx, as_dict=True)]
+            raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
+            
+        if isinstance(idx, list) and all([isinstance(f, int) for f in idx]):
+            return [v for v in self.get_rows(where_clause=f"{self.OIDField} IN {tuple(idx)}", as_dict=True)]
+        raise ValueError(f"{idx} is invalid, either pass field, OID, or list of fields or list of OIDs")
     
-    def __setitem__(self, idx: int | str, values: list | Any):
+    def __setitem__(self, idx: int | str | list, values: list | Any):
+        
         if isinstance(idx, int) and len(values) == len(self.fieldnames):
             self.update_rows(self.OIDField, {idx: dict(zip(self.fieldnames, values))})
             return
+        
         if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
-            with arcpy.da.UpdateCursor(self.featurepath, [idx], where_clause=self.query) as cursor:
+            with arcpy.da.UpdateCursor(self.path, [idx], where_clause=self.query) as cursor:
                 for row in cursor:
                     row[0] = values
                     cursor.updateRow(row)
             return
+        
+        if isinstance(idx, list) and set(idx).issubset(set(self.fieldnames + self.cursor_tokens)):
+            with arcpy.da.UpdateCursor(self.path, idx, where_clause=self.query) as cursor:
+                for row in cursor:
+                    cursor.updateRow(values)
+            return
+        
         raise ValueError(f"{idx} not in {self.fieldnames + self.cursor_tokens} or index is out of range")
     
     def __delitem__(self, idx: int | str | list[str]):
         if isinstance(idx, int):
-            self.delete_rows(self.OIDField, self[idx][self.OIDField])
+            self.delete_rows(self.OIDField, [idx])
             return
+        
         if isinstance(idx, str) and idx in self.fieldnames:
             self.delete_fields([idx])
             self.update()
             return
-        if isinstance(idx, list):
+        
+        if isinstance(idx, list) and all(isinstance(field, str) for field in idx):
             if all([field in self.fieldnames for field in idx]):
                 self.delete_fields(idx)
                 return
             else:
                 raise ValueError(f"{idx} not subset of {self.fieldnames}")
+            
+        if isinstance(idx, list) and all(isinstance(field, int) for field in idx):
+            self.delete_rows(self.OIDField, idx)
+            return
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
-
+    
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
     def __init__(self, shppath: os.PathLike):

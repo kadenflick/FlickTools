@@ -120,6 +120,6 @@ class VertexBuffer(Tool):
             arcpy.SetProgressorPosition()
             arcpy.SetProgressorLabel(f"Buffering Features {index}/{total}")
             
-        arcpy.CopyFeatures_management(buffers, f"{features.featurepath}{suffix}")
+        arcpy.CopyFeatures_management(buffers, f"{features.path}{suffix}")
         
         return
