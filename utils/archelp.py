@@ -20,11 +20,6 @@ class controlCLSID(Enum):
     HORIZONTAL_VALUE_TABLE = '{1AA9A769-D3F3-4EB0-85CB-CC07C79313C8}'
     SINGLE_VALUE_TABLE = '{1A1CA7EC-A47A-4187-A15C-6EDBA4FE0CF7}'
 
-class Parameter(arcpy.Parameter):
-    def __init__(self, name: str=None, displayName: str=None, datatype: str=None, parameterType: str=None, direction: str=None, controlCLSID: str=None, category: str=None, **kwargs) -> None:
-        super().__init__(name, displayName, datatype, parameterType, direction, controlCLSID **kwargs)
-        return
-
 class Parameters(object):
     """ Parameters class to store the parameters of a tool """
     def __init__(self, parameters: list) -> None:
