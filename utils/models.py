@@ -4,6 +4,7 @@ from typing import Any, Generator
 
 from archelp import message
 
+# Sentinels
 ALL_FIELDS = object()
 
 class DescribeModel:
