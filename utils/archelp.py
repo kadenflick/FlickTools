@@ -53,4 +53,4 @@ def message(message: str, severity: str = "info") -> None:
             arcpy.AddError(message)
             print(f"error: {message}")
     return
-        
+

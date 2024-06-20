@@ -57,8 +57,8 @@ class DescribeModel:
 
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
-    def __init__(self, tablepath: os.PathLike):
-        super().__init__(tablepath)
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
         
         self._query: str = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
@@ -367,8 +367,8 @@ class Table(DescribeModel):
     
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
-    def __init__(self, shppath: os.PathLike):
-        super().__init__(shppath)
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
         self.spatialReference: arcpy.SpatialReference = self.describe.spatialReference
         self.shapeType: str = self.describe.shapeType
         self.cursor_tokens.extend(
