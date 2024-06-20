@@ -81,6 +81,8 @@ class Table(DescribeModel):
         self.queried: bool = False
         self._queried_count: int = 0
         self._oid_set = set(self[self.OIDField])
+        self._updated: bool = False
+        self.record_count: int = int(arcpy.management.GetCount(self.path).getOutput(0))
         return
     
     def _validate_fields(self, fields: list[str]) -> bool:
@@ -186,6 +188,7 @@ class Table(DescribeModel):
                 if row_dict[key] in values.keys():
                     cursor.updateRow(list(values[row_dict[key]].values()))
                     update_count += 1
+        self._updated = True
         return update_count
     
     def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
@@ -195,11 +198,13 @@ class Table(DescribeModel):
             fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        if cur_type == "update":
-            return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
         if cur_type == "search":
             return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if cur_type == "update":
+            self._updated = True
+            return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
         if cur_type == "insert":
+            self._updated = True
             return arcpy.da.InsertCursor(self.path, fields, **kwargs)
         raise ValueError(f"Invalid cursor type {cur_type}")
     
@@ -244,7 +249,7 @@ class Table(DescribeModel):
             for value in values:
                 cursor.insertRow([value[field] for field in fields])
                 insert_count += 1
-        self.update()
+        self._updated = True
         return insert_count
     
     def delete_rows(self, key: str, values: list[Any], **kwargs) -> int:
@@ -288,6 +293,9 @@ class Table(DescribeModel):
     def __len__(self):
         if self.queried:
             return self._queried_count
+        if not self._updated:
+            return self.record_count
+        self._updated = False
         return int(arcpy.management.GetCount(self.path).getOutput(0))
     
     def __getitem__(self, idx: int | str | list):
@@ -379,10 +387,8 @@ class FeatureClass(Table):
             ]
         )
       
-class ShapeFile(FeatureClass):
-    """ Wraper for basic Shapefile operations"""
+class ShapeFile(FeatureClass): ...
 
-class Dataset(DescribeModel):
-    """ Wrapper for basic Dataset operations """
-class GeoDatabase(DescribeModel):
-    """ Wrapper for basic GeoDatabase operations """
+class Dataset(DescribeModel): ...
+
+class GeoDatabase(DescribeModel): ...
