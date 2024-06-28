@@ -21,7 +21,11 @@ TOOLS = \
     "tools.development":
         [
             "DevTool",
-        ]
+        ],
+    "tools.utility":
+        [
+            "VersionControl",
+        ],
 }
 
 IMPORTS = import_tools(TOOLS)
