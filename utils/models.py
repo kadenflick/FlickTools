@@ -1,11 +1,8 @@
 import arcpy
 import os
-from typing import Any, Generator
+from typing import Any, Generator, Hashable
 
 from archelp import message
-
-# Sentinels
-ALL_FIELDS = object()
 
 class DescribeModel:
     """ Base object for models """
@@ -27,14 +24,7 @@ class DescribeModel:
     
     def update(self):
         """ Update the Describe object """
-        new = self.__class__(self.path)
-        # Preserve a custom OIDField
-        if hasattr(new, "OIDField") and self.OIDField != new.OIDField:
-            new.OIDField = self.OIDField
-        # Preserve a custom query
-        if hasattr(new, "query") and self.query != new.query:
-            new.query = self.query
-        self.__dict__.update(new.__dict__)
+        self.__dict__.update(self.__class__(self.path).__dict__)
         return
     
     def _validate(self):
@@ -56,6 +46,7 @@ class DescribeModel:
         return f"{type(self).__name__}: {self.basename}"
 
 class Table(DescribeModel):
+    ALL_FIELDS = object()
     """ Wrapper for basic Table operations """
     def __init__(self, path: os.PathLike):
         super().__init__(path)
@@ -63,9 +54,6 @@ class Table(DescribeModel):
         self._query: str = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
         self.fieldnames: list[str] = list(self.fields.keys())
-        if hasattr(self.describe, "shapeFieldName"):
-            shape_idx = self.fieldnames.index(self.describe.shapeFieldName)
-            self.fieldnames[shape_idx] = "SHAPE@"   # Default to include full shape
         self.indexes: list[arcpy.Index] = self.describe.indexes
         self.OIDField: str = self.describe.OIDFieldName
         self.cursor_tokens: list[str] = \
@@ -84,13 +72,10 @@ class Table(DescribeModel):
         self._oid_set = set(self[self.OIDField])
         self._updated: bool = False
         self.record_count: int = int(arcpy.management.GetCount(self.path).getOutput(0))
+        if not self.validate_oid_field(): 
+            self.OIDField = self.describe.OIDFieldName
+            raise ValueError(f"{self.OIDField} must be unique")
         return
-    
-    def _validate_fields(self, fields: list[str]) -> bool:
-        """ Validate field list for cursors """
-        if fields != ["*"] and not all([field in self.fieldnames + self.cursor_tokens for field in fields]):
-            return False
-        return True
     
     @property
     def row_template(self) -> dict[str, Any]:
@@ -129,13 +114,25 @@ class Table(DescribeModel):
         return
     
     def set_oid_field(self, oid_field: str) -> None:
-        if oid_field in self.fieldnames:
-            found = set()
-            for v in self[oid_field]:
-                if v in found:
-                    raise ValueError(f"{oid_field} must be unique")
-                found.add(v)
-            self.OIDField = oid_field
+        """ Set the OID field for the table
+        oid_field: field to use as OID
+        
+        **WARNING**: This can have unintended consequences if the OID field is not unique
+        or if the OID field provided becomes non-unique after setting.
+        Use validate_oid_field to check for uniqueness after making edits that could affect the OID field
+        """
+        if oid_field not in self.fieldnames: 
+            raise ValueError(f"{oid_field} not in {self.fieldnames}")
+        
+        unique_count = len(set(self[oid_field]))
+        if not len(self) == unique_count:
+            raise ValueError(f"{oid_field} must be unique ({len(self) - unique_count} collisions)")
+        
+        self.OIDField = oid_field
+    
+    def validate_oid_field(self) -> bool:
+        """ Validate the OID field for uniqueness """
+        return len(self) == len(set(self[self.OIDField]))
     
     def get_rows(self, fields: list[str] = ALL_FIELDS, as_dict: bool = False, **kwargs) -> Generator[list | dict, None, None]:
         """ Get rows from a table 
@@ -143,70 +140,86 @@ class Table(DescribeModel):
         as_dict: return rows as dict if True
         kwargs: See arcpy.da.SearchCursor for kwargs
         """
-        if fields is ALL_FIELDS or fields == ["*"]:
+        if fields is Table.ALL_FIELDS or fields == ["*"]:
             fields = self.fieldnames
+            
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
-        query = self._validate_queries(kwargs)
+        kwargs["where_clause"] = self._handle_queries(kwargs)
         
-        with arcpy.da.SearchCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
+        with arcpy.da.SearchCursor(self.path, fields, **kwargs) as cursor:
             for row in cursor:
                 if as_dict: yield dict(zip(fields, row))
                 if len(fields) == 1: yield row[0]
                 yield row
                     
-    def update_rows(self, key: str, values: dict[Any, dict[str, Any]], **kwargs) -> int:
+    def update_rows(self, key: str, update_dictionary: dict[Hashable, dict[str, Any]], **kwargs) -> int:
         """ Update rows in table
         key: field to use as key for update (must be in fields)
-        values: dict of key value pairs to update [fieldname/token: value]
-        kwargs: See arcpy.da.UpdateCursor for kwargs
+        update_dictionary: dict of key value pairs to update [fieldname/token: {field: value}]
+        kwargs: See arcpy.da.UpdateCursor for allowed arguments
+              : where_clause: SQL query to filter rows* This will be added to any active query
         return: number of rows updated
         """
-        if not values: raise ValueError("Values must be provided")
+        if not update_dictionary: raise ValueError("Values must be provided")
         
-        fields = list(list(values.values())[0].keys())
+        fields = set([key])
+        for val in update_dictionary.values(): fields.update(val.keys())
         
-        if not self._validate_fields(fields): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        
-        if any((list(val.keys()) != fields for val in values.values())): raise ValueError(f"Fields must match for all values in values dict")
-        
-        query = self._validate_queries(kwargs)
+        if not self._validate_fields(list(fields)): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+                
+        kwargs["where_clause"] = self._handle_queries(kwargs)
         
         update_count = 0
-        with arcpy.da.UpdateCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
+        with self.update_cursor(fields, **kwargs) as cursor:
+            # NOTE: Because we used set operations to get the fields, the order of the fields may not be the same as the table.
+            #     : This is why we need to get the field order from the cursor object then map the update values back to the row
+            
             for row in cursor:
+                row_key = row_dict[key]  # Get the key value from the row
+                if not row_key in update_dictionary.keys(): continue
+                
                 row_dict = dict(zip(fields, row))
-                row_key = row_dict[key]
+                for field, value in update_dictionary[row_key].items(): 
+                    row_dict[field] = value
                 
-                if not row_dict[key] in values.keys(): continue
-                
-                cursor.updateRow(list(values[row_key].values()))
+                cursor.updateRow(list(row_dict.values()))  # Write the updated row back to the table
                 update_count += 1
                 
         self._updated = True
         return update_count
 
-    def _validate_queries(self, kwargs):
+    def _handle_queries(self, kwargs):
         query = self._query
         if 'where_clause' in kwargs:
             query = kwargs['where_clause']
             del kwargs['where_clause']
         return query
     
+    def _validate_fields(self, fields: list[str]) -> bool:
+        """ Validate field list for cursors """
+        if fields != ["*"] and not all([field in self.fieldnames + self.cursor_tokens for field in fields]):
+            return False
+        return True
+    
     def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
         """ Internal cursor method to get cursor type
         """
-        if fields is ALL_FIELDS or fields == ["*"]: fields = self.fieldnames
+        if fields is Table.ALL_FIELDS or fields == ["*"]: fields = self.fieldnames
         if not self._validate_fields(fields): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
-        if cur_type == "search": return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if cur_type == "search": 
+            return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        
         if cur_type == "update":
             self._updated = True
             return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
+        
         if cur_type == "insert":
             self._updated = True
             return arcpy.da.InsertCursor(self.path, fields, **kwargs)
+        
         raise ValueError(f"Invalid cursor type {cur_type}")
     
     def update_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor:
@@ -215,6 +228,7 @@ class Table(DescribeModel):
         kwargs: See arcpy.da.UpdateCursor for kwargs
         return: update cursor
         """
+        kwargs['where_clause'] = self._handle_queries(kwargs)
         return self._cursor("update", fields, **kwargs)
     
     def search_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.SearchCursor:
@@ -223,6 +237,7 @@ class Table(DescribeModel):
         kwargs: See arcpy.da.SearchCursor for kwargs
         return: search cursor
         """
+        kwargs['where_clause'] = self._handle_queries(kwargs)
         return self._cursor("search", fields, **kwargs)
     
     def insert_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.InsertCursor:
@@ -239,14 +254,13 @@ class Table(DescribeModel):
         values: list of dicts with key value pairs to insert [field: value]
         return: number of rows inserted
         """
-        if not values:
-            raise ValueError("Values must be provided")
+        if not values: raise ValueError("Values must be provided")
+        
         fields = list(values[0].keys())
-        if not self._validate_fields(fields):
-            raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        if not self._validate_fields(fields): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
         insert_count = 0
-        with arcpy.da.InsertCursor(self.path, fields, **kwargs) as cursor:
+        with self.insert_cursor(fields, **kwargs) as cursor:
             for value in values:
                 cursor.insertRow([value[field] for field in fields])
                 insert_count += 1
@@ -263,7 +277,7 @@ class Table(DescribeModel):
         if not values:
             raise ValueError("Values must be provided")
         delete_count = 0
-        with arcpy.da.UpdateCursor(self.path, [key], **kwargs) as cursor:
+        with self.update_cursor([key], **kwargs) as cursor:
             for row in cursor:
                 if row[0] in values:
                     cursor.deleteRow()
@@ -280,11 +294,11 @@ class Table(DescribeModel):
         self.update()
         return
     
-    def delete_fields(self, field_names: list[str]) -> None:
+    def delete_field(self, field_name: str) -> None:
         """ Delete a field from the table 
         field_name: name of the field to delete
         """
-        arcpy.management.DeleteField(self.path, field_names)
+        arcpy.management.DeleteField(self.path, field_name)
         self.update()
         return
     
@@ -292,34 +306,33 @@ class Table(DescribeModel):
         yield from self.get_rows(self.fieldnames, as_dict=True)
         
     def __len__(self):
-        if self.queried:
-            return self._queried_count
-        if not self._updated:
-            return self.record_count
+        if self.queried: return self._queried_count
+        if not self._updated: return self.record_count
+        
         self._updated = False
         return int(arcpy.management.GetCount(self.path).getOutput(0))
     
     def __getitem__(self, idx: int | str | list):
         
         if isinstance(idx, int):
-            if idx in self._oid_set:
-                return self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}").__next__()
-            raise KeyError(f"{idx} not in {self.name}.{self.OIDField}{f' with query: {self.query}' if self.query else ''}")
+            if idx not in self._oid_set: raise KeyError(f"{idx} not in {self.name}.{self.OIDField}{f' with query: {self.query}' if self.query else ''}")
+            return next(self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}"))
         
         if isinstance(idx, str):
             if idx in self.fieldnames + self.cursor_tokens:
                 return [v for v in self.get_rows([idx])]
             elif idx in self._oid_set:
-                return self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}").__next__()
+                return next(self.get_rows(as_dict=True, where_clause=f"{self.OIDField} = {idx}"))
+            
             raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
         
         if isinstance(idx, list) and all([isinstance(f, str) for f in idx]):
-            if set(idx).issubset(self.fieldnames + self.cursor_tokens):
-                return [v for v in self.get_rows(idx, as_dict=True)]
+            if all([field in self.fieldnames + self.cursor_tokens for field in idx]):
+                return [value for value in self.get_rows(idx, as_dict=True)]
             raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
             
         if isinstance(idx, list) and all([isinstance(f, int) for f in idx]):
-            return [v for v in self.get_rows(where_clause=f"{self.OIDField} IN {tuple(idx)}", as_dict=True)]
+            return [value for value in self.get_rows(where_clause=f"{self.OIDField} IN {tuple(idx)}", as_dict=True)]
         raise ValueError(f"{idx} is invalid, either pass field, OID, or list of fields or list of OIDs")
     
     def __setitem__(self, idx: int | str | list, values: list | Any):
@@ -329,41 +342,52 @@ class Table(DescribeModel):
             return
         
         if isinstance(idx, str) and idx in self.fieldnames + self.cursor_tokens:
-            with arcpy.da.UpdateCursor(self.path, [idx], where_clause=self.query) as cursor:
-                for row in cursor:
-                    row[0] = values
-                    cursor.updateRow(row)
+            with self.update_cursor([idx], where_clause=self.query) as cursor:
+                for _ in cursor: cursor.updateRow([values])
             return
         
-        if isinstance(idx, list) and set(idx).issubset(set(self.fieldnames + self.cursor_tokens)):
-            with arcpy.da.UpdateCursor(self.path, idx, where_clause=self.query) as cursor:
-                for row in cursor:
-                    cursor.updateRow(values)
+        if isinstance(idx, list) and all(field in self.fieldnames + self.cursor_tokens for field in idx):
+            with self.update_cursor(idx, where_clause=self.query) as cursor:
+                for _ in cursor: cursor.updateRow(values)
             return
         
         raise ValueError(f"{idx} not in {self.fieldnames + self.cursor_tokens} or index is out of range")
     
     def __delitem__(self, idx: int | str | list[str]):
-        if isinstance(idx, int):
+        if isinstance(idx, int): 
             self.delete_rows(self.OIDField, [idx])
             return
         
         if isinstance(idx, str) and idx in self.fieldnames:
-            self.delete_fields([idx])
+            self.delete_field(idx)
             self.update()
             return
         
         if isinstance(idx, list) and all(isinstance(field, str) for field in idx):
-            if all([field in self.fieldnames for field in idx]):
-                self.delete_fields(idx)
-                return
-            else:
+            if not all([field in self.fieldnames for field in idx]): 
                 raise ValueError(f"{idx} not subset of {self.fieldnames}")
             
+            for field in idx: self.delete_field(field)
+            self.update()
+            return
+         
         if isinstance(idx, list) and all(isinstance(field, int) for field in idx):
             self.delete_rows(self.OIDField, idx)
             return
+        
         raise KeyError(f"{idx} not in {self.fieldnames + self.cursor_tokens}")
+    
+    def update(self):
+        """ Update the Table object and preserve custom attributes """
+        new = self.__class__(self.path)
+        
+        # Preserve a custom OIDField
+        if self.OIDField != new.OIDField and self.validate_oid_field(): new.OIDField = self.OIDField    
+        # Preserve a custom query
+        if self.query != new.query: new.query = self.query
+        
+        self.__dict__.update(new.__dict__)
+        return
     
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
@@ -373,6 +397,7 @@ class FeatureClass(Table):
         self.shapeType: str = self.describe.shapeType
         self.cursor_tokens.extend(
             [
+                "SHAPE@",
                 "SHAPE@XY",
                 "SHAPE@TRUECENTROID",
                 "SHAPE@X",
@@ -382,11 +407,11 @@ class FeatureClass(Table):
                 "SHAPE@JSON",
                 "SHAPE@WKB",
                 "SHAPE@WKT",
-                "SHAPE@",
                 "SHAPE@AREA",
                 "SHAPE@LENGTH",
             ]
         )
+        self.fieldnames[self.fieldnames.index(self.describe.shapeFieldName)] = "SHAPE@"
       
 class ShapeFile(FeatureClass): ...
 
