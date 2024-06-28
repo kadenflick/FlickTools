@@ -143,23 +143,18 @@ class Table(DescribeModel):
         as_dict: return rows as dict if True
         kwargs: See arcpy.da.SearchCursor for kwargs
         """
-        if fields == ALL_FIELDS or fields == ["*"]:
+        if fields is ALL_FIELDS or fields == ["*"]:
             fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
         
-        query = self._query
-        if 'where_clause' in kwargs:
-            query = kwargs['where_clause']
-            del kwargs['where_clause']
+        query = self._validate_queries(kwargs)
         
         with arcpy.da.SearchCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
-                if as_dict:
-                    yield dict(zip(fields, row))
-                else:
-                    if len(fields) == 1: yield row[0]
-                    else: yield row
+                if as_dict: yield dict(zip(fields, row))
+                if len(fields) == 1: yield row[0]
+                yield row
                     
     def update_rows(self, key: str, values: dict[Any, dict[str, Any]], **kwargs) -> int:
         """ Update rows in table
@@ -168,39 +163,44 @@ class Table(DescribeModel):
         kwargs: See arcpy.da.UpdateCursor for kwargs
         return: number of rows updated
         """
-        if not values:
-            raise ValueError("Values must be provided")
-        fields = list(list(values.values())[0].keys())
-        if not self._validate_fields(fields):
-            raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        for val in values.values():
-            if list(val.keys()) != fields:
-                raise ValueError(f"Fields must match for all values in values dict")
+        if not values: raise ValueError("Values must be provided")
         
-        query = self._query
-        if 'where_clause' in kwargs:
-            query = kwargs['where_clause']
-            del kwargs['where_clause']
+        fields = list(list(values.values())[0].keys())
+        
+        if not self._validate_fields(fields): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        
+        if any((list(val.keys()) != fields for val in values.values())): raise ValueError(f"Fields must match for all values in values dict")
+        
+        query = self._validate_queries(kwargs)
         
         update_count = 0
         with arcpy.da.UpdateCursor(self.path, fields, where_clause=query, **kwargs) as cursor:
             for row in cursor:
                 row_dict = dict(zip(fields, row))
-                if row_dict[key] in values.keys():
-                    cursor.updateRow(list(values[row_dict[key]].values()))
-                    update_count += 1
+                row_key = row_dict[key]
+                
+                if not row_dict[key] in values.keys(): continue
+                
+                cursor.updateRow(list(values[row_key].values()))
+                update_count += 1
+                
         self._updated = True
         return update_count
+
+    def _validate_queries(self, kwargs):
+        query = self._query
+        if 'where_clause' in kwargs:
+            query = kwargs['where_clause']
+            del kwargs['where_clause']
+        return query
     
     def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
         """ Internal cursor method to get cursor type
         """
-        if fields is ALL_FIELDS or fields == ["*"]:
-            fields = self.fieldnames
-        if not self._validate_fields(fields):
-            raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        if cur_type == "search":
-            return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if fields is ALL_FIELDS or fields == ["*"]: fields = self.fieldnames
+        if not self._validate_fields(fields): raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
+        
+        if cur_type == "search": return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
         if cur_type == "update":
             self._updated = True
             return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
