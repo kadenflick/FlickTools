@@ -4,6 +4,7 @@ from typing import Any, Generator
 
 from archelp import message
 
+# Sentinels
 ALL_FIELDS = object()
 
 class DescribeModel:
@@ -56,8 +57,8 @@ class DescribeModel:
 
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
-    def __init__(self, tablepath: os.PathLike):
-        super().__init__(tablepath)
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
         
         self._query: str = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
@@ -81,6 +82,8 @@ class Table(DescribeModel):
         self.queried: bool = False
         self._queried_count: int = 0
         self._oid_set = set(self[self.OIDField])
+        self._updated: bool = False
+        self.record_count: int = int(arcpy.management.GetCount(self.path).getOutput(0))
         return
     
     def _validate_fields(self, fields: list[str]) -> bool:
@@ -186,6 +189,7 @@ class Table(DescribeModel):
                 if row_dict[key] in values.keys():
                     cursor.updateRow(list(values[row_dict[key]].values()))
                     update_count += 1
+        self._updated = True
         return update_count
     
     def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
@@ -195,11 +199,13 @@ class Table(DescribeModel):
             fields = self.fieldnames
         if not self._validate_fields(fields):
             raise ValueError(f"Fields must be in {self.fieldnames + self.cursor_tokens}")
-        if cur_type == "update":
-            return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
         if cur_type == "search":
             return arcpy.da.SearchCursor(self.path, fields, where_clause=self.query, **kwargs)
+        if cur_type == "update":
+            self._updated = True
+            return arcpy.da.UpdateCursor(self.path, fields, where_clause=self.query, **kwargs)
         if cur_type == "insert":
+            self._updated = True
             return arcpy.da.InsertCursor(self.path, fields, **kwargs)
         raise ValueError(f"Invalid cursor type {cur_type}")
     
@@ -244,7 +250,7 @@ class Table(DescribeModel):
             for value in values:
                 cursor.insertRow([value[field] for field in fields])
                 insert_count += 1
-        self.update()
+        self._updated = True
         return insert_count
     
     def delete_rows(self, key: str, values: list[Any], **kwargs) -> int:
@@ -288,6 +294,9 @@ class Table(DescribeModel):
     def __len__(self):
         if self.queried:
             return self._queried_count
+        if not self._updated:
+            return self.record_count
+        self._updated = False
         return int(arcpy.management.GetCount(self.path).getOutput(0))
     
     def __getitem__(self, idx: int | str | list):
@@ -358,8 +367,8 @@ class Table(DescribeModel):
     
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
-    def __init__(self, shppath: os.PathLike):
-        super().__init__(shppath)
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
         self.spatialReference: arcpy.SpatialReference = self.describe.spatialReference
         self.shapeType: str = self.describe.shapeType
         self.cursor_tokens.extend(
@@ -379,10 +388,8 @@ class FeatureClass(Table):
             ]
         )
       
-class ShapeFile(FeatureClass):
-    """ Wraper for basic Shapefile operations"""
+class ShapeFile(FeatureClass): ...
 
-class Dataset(DescribeModel):
-    """ Wrapper for basic Dataset operations """
-class GeoDatabase(DescribeModel):
-    """ Wrapper for basic GeoDatabase operations """
+class Dataset(DescribeModel): ...
+
+class GeoDatabase(DescribeModel): ...
