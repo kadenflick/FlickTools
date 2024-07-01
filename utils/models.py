@@ -51,6 +51,7 @@ class Table(DescribeModel, MutableMapping):
     def __init__(self, path: os.PathLike):
         super().__init__(path)
         self._query: str = None
+        self._spatial_filter: arcpy.Geometry = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
         self.fieldnames: list[str] = list(self.fields.keys())
         self.OIDField: str = self.describe.OIDFieldName
@@ -83,13 +84,10 @@ class Table(DescribeModel, MutableMapping):
     @query.setter
     def query(self, query_string: str):
         """ Set the query string """
-        if not query_string:
-            del self.query
+        if not query_string: del self.query
         try:
-            with arcpy.da.SearchCursor(self.path, [self.OIDField], where_clause=query_string) as cur:
-                cur.fields
-        except Exception as e:
-            message(f"Invalid query string ({query_string})", "warning")
+            with self.search_cursor(where_clause=query_string) as cur: cur.fields
+        except Exception as e: message(f"Invalid query string ({query_string})\n{e}", "warning")
         self._query = query_string
         self._updated = True
         self.queried = True
@@ -102,19 +100,55 @@ class Table(DescribeModel, MutableMapping):
         """ Delete the query string """
         self._query = None
         self.queried = False
-        self.data = None
+        self._oid_set = set(self[self.OIDField])
+        return
+
+    @property
+    def spatial_filter(self) -> arcpy.Geometry:
+        """ Get the query string """
+        return self._spatial_filter
+    
+    @spatial_filter.setter
+    def spatial_filter(self, filter_shape: arcpy.Geometry):
+        """ Set the query string """
+        if not filter_shape: del self._spatial_filter
+        try:
+            with self.search_cursor(spatial_filter=filter_shape) as cur:
+                cur.fields
+        except Exception as e:
+            message(f"Invalid spatial filter ({filter_shape})\n{e}", "warning")
+        self._spatial_filter = filter_shape
+        self._updated = True
+        self.queried = True
+        self._queried_count = len(self)
+        self._oid_set = set(self[self.OIDField])
+        return
+    
+    @spatial_filter.deleter
+    def spatial_filter(self):
+        """ Delete the query string """
+        self._spatial_filter = None
+        self.queried = False
         self._oid_set = set(self[self.OIDField])
         return
     
     def _handle_queries(self, kwargs):
-        if 'where_clause' in kwargs:
+        if 'where_clause' in kwargs and self.query:
             return f"({self.query}) AND ({kwargs['where_clause']})"
-        else:
-            return self.query
+        elif 'where_clause' in kwargs:
+            return kwargs['where_clause']
+        return self.query
     
+    def _handle_spatial_filter(self, kwargs):
+        if self.spatial_filter and 'spatial_filter' in kwargs and self.spatial_filter.type == kwargs['spatial_filter'].type:
+            return self.spatial_filter.union(kwargs['spatial_filter'])
+        elif 'spatial_filter' in kwargs:
+            return kwargs['spatial_filter']
+        return self.spatial_filter
+        
     def _validate_fields(self, fields: list[str]) -> bool:
         """ Validate field list for cursors """
-        if fields not in (["*"] , Table.ALL_FIELDS) and not all((field in self.valid_fields for field in fields)):
+        if fields not in (["*"] , Table.ALL_FIELDS) and not all(field in self.valid_fields for field in fields):
             return False
         return True
     
@@ -139,6 +173,7 @@ class Table(DescribeModel, MutableMapping):
             raise ValueError(f"Fields must be in {self.valid_fields}")
         
         kwargs['where_clause'] = self._handle_queries(kwargs)
+        kwargs['spatial_filter'] = self._handle_spatial_filter(kwargs)
         
         if cur_type == "search": 
             return arcpy.da.SearchCursor(self.path, fields, **kwargs)
@@ -342,6 +377,8 @@ class Table(DescribeModel, MutableMapping):
         if self.OIDField != new.OIDField and self.validate_oid_field(): new.OIDField = self.OIDField    
         # Preserve a custom query
         if self.query != new.query: new.query = self.query
+        # Preserve a custom spatial filter
+        if self.spatial_filter and not new.spatial_filter: new.spatial_filter = self.spatial_filter
         
         self.__dict__.update(new.__dict__)
         return
@@ -387,7 +424,6 @@ class Workspace(DescribeModel):
                 ds: FeatureDataset(os.path.join(self.path, ds)) 
                 for ds in arcpy.ListDatasets()
             }
-        print(f"Found Datasets: {len(self.datasets)}")
         self.featureclasses: dict[str, FeatureClass] = \
             {
                 fc: FeatureClass(os.path.join(self.path, fc)) 
@@ -402,14 +438,12 @@ class Workspace(DescribeModel):
                     if fc in self.fc_filter
                 }
             )
-        print(f"Found FeatureClasses: {len(self.featureclasses)}")
         self.tables: dict[str, Table] = \
             {
                 tbl: Table(os.path.join(self.path, tbl)) 
                 for tbl in arcpy.ListTables()
                 if tbl in self.fc_filter
             }
-        print(f"Found Tables: {len(self.tables)}")
         return
     
     def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
@@ -437,4 +471,4 @@ def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[
     yield from ( dict(zip(cursor.fields, row)) for row in cursor )
 
 if __name__ == "__main__":
-    spans = FeatureClass(r"C:\Users\asimov\Desktop\Network Builder\Data\Ezee Fiber Katy South 1.1\lld_design.gdb\Design\Span")
+    pass
