@@ -18,7 +18,6 @@ class DescribeModel:
         self.catalogpath: os.PathLike = desc.catalogPath
         self.extension: str = desc.extension
         self.type: str = desc.dataType
-        self.data: dict[int, dict[str, Any]] = None
         return
     
     def update(self):
@@ -92,9 +91,9 @@ class Table(DescribeModel, MutableMapping):
         except Exception as e:
             message(f"Invalid query string ({query_string})", "warning")
         self._query = query_string
-        self.data = [row for row in self]
-        self._queried_count = len(self.data)
+        self._updated = True
         self.queried = True
+        self._queried_count = len(self)
         self._oid_set = set(self[self.OIDField])
         return
     
