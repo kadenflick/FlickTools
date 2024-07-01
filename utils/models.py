@@ -108,7 +108,7 @@ class Table(DescribeModel, MutableMapping):
     
     def _handle_queries(self, kwargs):
         if 'where_clause' in kwargs:
-            return f"({self query}) AND ({kwargs['where_clause']})"
+            return f"({self.query}) AND ({kwargs['where_clause']})"
         else:
             return self.query
     
