@@ -379,33 +379,46 @@ class FeatureDataset(DescribeModel): ...
 
 class Workspace(DescribeModel):
     
-    def __init__(self, path: os.PathLike):
+    def __init__(self, path: os.PathLike, fc_filter: list[str]=None):
         super().__init__(path)
         
+        self.fc_filter = fc_filter
         arcpy.env.workspace = self.path
         self.datasets: dict[str, FeatureDataset] = \
             {
                 ds: FeatureDataset(os.path.join(self.path, ds)) 
                 for ds in arcpy.ListDatasets()
             }
+        print(f"Found Datasets: {len(self.datasets)}")
         self.featureclasses: dict[str, FeatureClass] = \
             {
                 fc: FeatureClass(os.path.join(self.path, fc)) 
                 for fc in arcpy.ListFeatureClasses()
+                if fc in self.fc_filter
             }
         for ds in self.datasets.keys():
             self.featureclasses.update(
                 {
                     fc: FeatureClass(os.path.join(self.path, ds, fc))
                     for fc in arcpy.ListFeatureClasses(feature_dataset=ds)
+                    if fc in self.fc_filter
                 }
             )
+        print(f"Found FeatureClasses: {len(self.featureclasses)}")
         self.tables: dict[str, Table] = \
             {
                 tbl: Table(os.path.join(self.path, tbl)) 
                 for tbl in arcpy.ListTables()
+                if tbl in self.fc_filter
             }
+        print(f"Found Tables: {len(self.tables)}")
         return
+    
+    def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
+        if idx in self.featureclasses: return self.featureclasses[idx]
+        if idx in self.tables: return self.tables[idx]
+        if idx in self.datasets: return self.datasets[idx]
+        raise KeyError(f"{idx} not in {self.featureclasses.keys()} or {self.tables.keys()} or {self.datasets.keys()}")
 
 
 def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[dict[str, Any], None, None]:
