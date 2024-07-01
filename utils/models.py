@@ -426,11 +426,11 @@ def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[
     
     usage:
     >>> with table.search_cursor() as cursor:
-    >>>     for row in table.as_dict(cursor):
+    >>>     for row in as_dict(cursor):
     >>>         print(row)
     
     >>> with table.update_cursor() as cursor:
-    >>>     for row in table.as_dict(cursor):
+    >>>     for row in as_dict(cursor):
     >>>        cursor.updateRow([row[field] for field in table.fieldnames])
         
     """
