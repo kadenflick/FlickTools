@@ -465,7 +465,8 @@ def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[
     
     >>> with table.update_cursor() as cursor:
     >>>     for row in as_dict(cursor):
-    >>>        cursor.updateRow([row[field] for field in table.fieldnames])
+    >>>        row["field"] = "new value"
+    >>>        cursor.updateRow(list(row.values()))
         
     """
     yield from ( dict(zip(cursor.fields, row)) for row in cursor )
