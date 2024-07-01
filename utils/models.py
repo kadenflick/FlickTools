@@ -108,11 +108,10 @@ class Table(DescribeModel, MutableMapping):
         return
     
     def _handle_queries(self, kwargs):
-        query = self._query
         if 'where_clause' in kwargs:
-            query = kwargs['where_clause']
-            del kwargs['where_clause']
-        return query
+            return f"({self query}) AND ({kwargs['where_clause']})"
+        else:
+            return self.query
     
     def _validate_fields(self, fields: list[str]) -> bool:
         """ Validate field list for cursors """
