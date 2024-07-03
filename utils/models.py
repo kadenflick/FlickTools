@@ -1,6 +1,7 @@
 import arcpy
 import os
 
+from arcpy.mp import ArcGISProject
 from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
 from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
 from archelp import message
@@ -240,19 +241,7 @@ class Table(DescribeModel, MutableMapping):
             return
         
         raise ValueError(f"{idx} is invalid, either pass field, OID, or list of fields or list of OIDs ({self.valid_fields})")
-    
-    @overload
-    def __setitem__(self, idx: int, val: Any) -> None: ...
-    
-    @overload
-    def __setitem__(self, idx: str, val: Mapping[str, Any]) -> None: ...
-    
-    @overload
-    def __setitem__(self, idx: str, val: Any) -> None: ...
-    
-    @overload
-    def __setitem__(self, idx: Iterable, val: Iterable[Any]) -> None: ...
-    
+     
     def __setitem__(self, idx: int | str | Iterable[str], val: Mapping[str, Any] | Any) -> None:
         
         if (idx in self._oid_set) and isinstance(val, Mapping) and all(field in val.keys() for field in self.fieldnames):
@@ -274,18 +263,6 @@ class Table(DescribeModel, MutableMapping):
             return
         
         raise ValueError(f"{idx} not in {self.valid_fields} or index is out of range")
-    
-    @overload
-    def __delitem__(self, idx: int) -> None: ...
-    
-    @overload
-    def __delitem__(self, idx: str) -> None: ...
-    
-    @overload
-    def __delitem__(self, idx: Iterable[str]) -> None: ...
-    
-    @overload
-    def __delitem__(self, idx: Iterable[int]) -> None: ...
     
     def __delitem__(self, idx: int | str | Iterable[str] | Iterable[int]) -> str:
         if isinstance(idx, int):
