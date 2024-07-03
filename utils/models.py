@@ -414,37 +414,57 @@ class FeatureDataset(DescribeModel): ...
 
 class Workspace(DescribeModel):
     
-    def __init__(self, path: os.PathLike, fc_filter: list[str]=None):
+    def __init__(self, path: os.PathLike, *,
+                 dataset_filter: list[str]=None,
+                 featureclass_filter: list[str]=None,
+                 table_filter: list[str]=None):
         super().__init__(path)
         
-        self.fc_filter = fc_filter
+        self.dataset_filter = dataset_filter
+        self.featureclass_filter = featureclass_filter
+        self.table_filter = table_filter
         arcpy.env.workspace = self.path
         self.datasets: dict[str, FeatureDataset] = \
             {
                 ds: FeatureDataset(os.path.join(self.path, ds)) 
                 for ds in arcpy.ListDatasets()
+                if not self.dataset_filter or ds in self.dataset_filter
             }
         self.featureclasses: dict[str, FeatureClass] = \
             {
                 fc: FeatureClass(os.path.join(self.path, fc)) 
                 for fc in arcpy.ListFeatureClasses()
-                if fc in self.fc_filter
+                if not self.featureclass_filter or fc in self.featureclass_filter
             }
         for ds in self.datasets.keys():
             self.featureclasses.update(
                 {
                     fc: FeatureClass(os.path.join(self.path, ds, fc))
                     for fc in arcpy.ListFeatureClasses(feature_dataset=ds)
-                    if fc in self.fc_filter
+                    if not self.featureclass_filter or fc in self.featureclass_filter
                 }
             )
         self.tables: dict[str, Table] = \
             {
                 tbl: Table(os.path.join(self.path, tbl)) 
                 for tbl in arcpy.ListTables()
-                if tbl in self.fc_filter
+                if not self.table_filter or tbl in self.table_filter
             }
         return
+    
+    def __iter__(self) -> Generator[FeatureClass | Table | FeatureDataset, None, None]:
+        yield from self.featureclasses.values()
+        yield from self.tables.values()
+        yield from self.datasets.values()
+    
+    def __len__(self) -> int:
+        return len(self.featureclasses) + len(self.tables) + len(self.datasets)
+    
+    def __str__(self) -> str:
+        return f"{type(self).__name__}: {self.path}"
+
+    def __repr__(self) -> str:
+        return f"<{str(self)} @ {hex(id(self))}>\t\nFeatureClasses:{list(self.featureclasses.keys())}\t\nTables:{list(self.tables.keys())}\t\nDatasets:{list(self.datasets.keys())}"
     
     def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
         if idx in self.featureclasses: return self.featureclasses[idx]
@@ -455,14 +475,19 @@ class Workspace(DescribeModel):
 
 def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[dict[str, Any], None, None]:
     """ Convert a search cursor or update cursor to a dictionary 
-    cursor: search cursor or update cursor
-    return: generator of dictionaries
+    @param cursor: search cursor or update cursor
+    @yield: dictionary of the cursor row
+    
+    NOTE: This function will not overwrite the cursor object
+    if used in a context manager and iterating through the yielded
+    dictionaries will progress the cursor as if you were iterating
+    through the cursor object itself.
     
     usage:
     >>> with table.search_cursor() as cursor:
     >>>     for row in as_dict(cursor):
     >>>         print(row)
-    
+    ------------------------------------------------
     >>> with table.update_cursor() as cursor:
     >>>     for row in as_dict(cursor):
     >>>        row["field"] = "new value"
@@ -472,4 +497,4 @@ def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[
     yield from ( dict(zip(cursor.fields, row)) for row in cursor )
 
 if __name__ == "__main__":
-    pass
+    pass    
