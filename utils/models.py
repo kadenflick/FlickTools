@@ -1,8 +1,8 @@
 import arcpy
 import os
 
+from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
 from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
-
 from archelp import message
 
 class DescribeModel:
@@ -157,13 +157,13 @@ class Table(DescribeModel, MutableMapping):
         valid_workspace = False
         while not valid_workspace:
             try:
-                with arcpy.da.Editor(self.workspace):
+                with Editor(self.workspace):
                     valid_workspace = True
             except RuntimeError:
                 self.workspace = os.path.dirname(self.workspace)
-        return arcpy.da.Editor(self.workspace)
+        return Editor(self.workspace)
     
-    def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor | arcpy.da.SearchCursor | arcpy.da.InsertCursor:
+    def _cursor(self, cur_type: str, fields: list[str]=ALL_FIELDS, **kwargs) -> UpdateCursor | SearchCursor | InsertCursor:
         """ Internal cursor method to get cursor type
         """
         if fields is Table.ALL_FIELDS or fields == ["*"]: 
@@ -176,15 +176,15 @@ class Table(DescribeModel, MutableMapping):
         kwargs['spatial_filter'] = self._handle_spatial_filter(kwargs)
         
         if cur_type == "search": 
-            return arcpy.da.SearchCursor(self.path, fields, **kwargs)
+            return SearchCursor(self.path, fields, **kwargs)
         
         if cur_type == "update":
             self._updated = True
-            return arcpy.da.UpdateCursor(self.path, fields, **kwargs)
+            return UpdateCursor(self.path, fields, **kwargs)
         
         if cur_type == "insert":
             self._updated = True
-            return arcpy.da.InsertCursor(self.path, fields, **kwargs)
+            return InsertCursor(self.path, fields, **kwargs)
         
         raise ValueError(f"Invalid cursor type {cur_type}")
     
@@ -312,26 +312,26 @@ class Table(DescribeModel, MutableMapping):
         
         raise KeyError(f"{idx} not in {self.valid_fields}")
     
-    def update_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.UpdateCursor:
+    def update_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> UpdateCursor:
         """ Get an update cursor for the table
         fields: list of fields to update
-        kwargs: See arcpy.da.UpdateCursor for kwargs
+        kwargs: See UpdateCursor for kwargs
         return: update cursor
         """
         return self._cursor("update", fields, **kwargs)
     
-    def search_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.SearchCursor:
+    def search_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> SearchCursor:
         """ Get a search cursor for the table
         fields: list of fields to return
-        kwargs: See arcpy.da.SearchCursor for kwargs
+        kwargs: See SearchCursor for kwargs
         return: search cursor
         """
         return self._cursor("search", fields, **kwargs)
     
-    def insert_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> arcpy.da.InsertCursor:
+    def insert_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> InsertCursor:
         """ Get an insert cursor for the table
         fields: list of fields to insert
-        kwargs: See arcpy.da.InsertCursor for kwargs
+        kwargs: See InsertCursor for kwargs
         return: insert cursor
         """
         return self._cursor("insert", fields, **kwargs)
@@ -476,7 +476,7 @@ class Workspace(DescribeModel):
         raise KeyError(f"{idx} not in {self.featureclasses.keys()} or {self.tables.keys()} or {self.datasets.keys()}")
 
 
-def as_dict(cursor: arcpy.da.SearchCursor | arcpy.da.UpdateCursor) -> Generator[dict[str, Any], None, None]:
+def as_dict(cursor: SearchCursor | UpdateCursor) -> Generator[dict[str, Any], None, None]:
     """ Convert a search cursor or update cursor to a dictionary 
     @param cursor: search cursor or update cursor
     @yield: dictionary of the cursor row
