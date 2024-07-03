@@ -208,18 +208,6 @@ class Table(DescribeModel, MutableMapping):
         self.record_count = int(arcpy.management.GetCount(self.path).getOutput(0))
         return self.record_count
     
-    @overload
-    def __getitem__(self, idx: int) -> Generator[Any, None, None]: ...
-    
-    @overload
-    def __getitem__(self, idx: str) -> Generator[Any, None, None]: ...
-    
-    @overload
-    def __getitem__(self, idx: Iterable[int]) -> Generator[Any, None, None]: ...
-    
-    @overload
-    def __getitem__(self, idx: Iterable[str]) -> Generator[Any, None, None]: ...
-    
     def __getitem__(self, idx: int | str | Iterable[int] | Iterable[str]) -> Any:
         # When retreiving a single object by OID, a generator is returned and next must be called
         # e.g. 
@@ -447,9 +435,9 @@ class Workspace(DescribeModel):
 
     def __repr__(self) -> str:
         return f"""<{str(self)} @ {hex(id(self))}>
-    \t\nFeatureClasses:{list(self.featureclasses.keys())}
-    \t\nTables:{list(self.tables.keys())}
-    \t\nDatasets:{list(self.datasets.keys())}"""
+    \tFeatureClasses:{list(self.featureclasses.keys())}
+    \tTables:{list(self.tables.keys())}
+    \tDatasets:{list(self.datasets.keys())}"""
     
     def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
         if idx in self.featureclasses: return self.featureclasses[idx]
