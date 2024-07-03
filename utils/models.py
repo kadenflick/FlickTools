@@ -464,7 +464,10 @@ class Workspace(DescribeModel):
         return f"{type(self).__name__}: {self.path}"
 
     def __repr__(self) -> str:
-        return f"<{str(self)} @ {hex(id(self))}>\t\nFeatureClasses:{list(self.featureclasses.keys())}\t\nTables:{list(self.tables.keys())}\t\nDatasets:{list(self.datasets.keys())}"
+        return f"""<{str(self)} @ {hex(id(self))}>
+    \t\nFeatureClasses:{list(self.featureclasses.keys())}
+    \t\nTables:{list(self.tables.keys())}
+    \t\nDatasets:{list(self.datasets.keys())}"""
     
     def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
         if idx in self.featureclasses: return self.featureclasses[idx]
