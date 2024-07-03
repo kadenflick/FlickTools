@@ -282,6 +282,42 @@ class Table(DescribeModel, MutableMapping):
         
         raise KeyError(f"{idx} not in {self.valid_fields}")
     
+    def _clause(self, prefix: str | None, postfix: str | None, field: str = None) -> Generator[dict[str, Any], None, None]:
+        if field and not field in self.valid_fields: 
+            raise ValueError(f"{field} not in {self.valid_fields}")
+        try:
+            yield from as_dict(self.search_cursor(sql_clause=(prefix, postfix)))
+        except RuntimeError as sql_error:
+            message(f"""Invalid SQL Clause ({prefix} {postfix})\
+                    \nMake sure your databse supports TOP, ORDER BY and DISTINCT\
+                    \nTOP requres a SQL Server database (try using slices or range instead)\
+                    \nORDER BY and DISTINCT require at least file geodatabase\
+                    \n{sql_error}""", "warning")
+    
+    def _sort(self, field: str, reverse: bool, top: int = None) -> Generator[dict[str, Any], None, None]:
+        yield from self._clause(
+            prefix= f"TOP {top}" if top else None,
+            postfix=f"ORDER BY {field} {'DESC' if reverse else 'ASC'}", 
+            field=field)
+    
+    def dsort(self, field: str, top: int = None):
+        yield from self._sort(field, reverse=True, top=top)
+    
+    def asort(self, field: str, top: int = None):
+        yield from self._sort(field, reverse=False, top=top)
+    
+    def group_by(self, field: str, top: int = None) -> Generator[dict[str, Any], None, None]:
+        yield from self._clause(
+            prefix=f"TOP {top}" if top else None, 
+            postfix=f"GROUP BY {field}", 
+            field=field)
+    
+    def distinct(self, field: str) -> Generator[dict[str, Any], None, None]:
+        yield from self._clause(
+            prefix=f"DISTINCT {field}", 
+            postfix=None, 
+            field=field)
+    
     def update_cursor(self, fields: list[str]=ALL_FIELDS, **kwargs) -> UpdateCursor:
         """ Get an update cursor for the table
         fields: list of fields to update
