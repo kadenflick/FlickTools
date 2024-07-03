@@ -209,7 +209,7 @@ class Table(DescribeModel, MutableMapping):
         return self.record_count
     
     @overload
-    def __getitem__(self, idx: int) -> Any: ...
+    def __getitem__(self, idx: int) -> Generator[Any, None, None]: ...
     
     @overload
     def __getitem__(self, idx: str) -> Generator[Any, None, None]: ...
@@ -221,6 +221,11 @@ class Table(DescribeModel, MutableMapping):
     def __getitem__(self, idx: Iterable[str]) -> Generator[Any, None, None]: ...
     
     def __getitem__(self, idx: int | str | Iterable[int] | Iterable[str]) -> Any:
+        # When retreiving a single object by OID, a generator is returned and next must be called
+        # e.g. 
+        # >>> table[1] -> <generator object Table...>
+        # >>> next(table[1]) -> {field: value}
+        # This allows a reference to the object to be stored before using it
         if isinstance(idx, int) and idx in self._oid_set:
             yield from as_dict(self.search_cursor(where_clause=f"{self.OIDField} = {idx}"))
             return
