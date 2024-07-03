@@ -454,9 +454,14 @@ class Workspace(DescribeModel):
 
 
 def as_dict(cursor: SearchCursor | UpdateCursor) -> Generator[dict[str, Any], None, None]:
-    """ Convert a search cursor or update cursor to a dictionary 
-    @param cursor: search cursor or update cursor
-    @yield: dictionary of the cursor row
+    """Convert a search cursor or update cursor to an iterable dictionary generator
+    This allows for each row operation to be done using fieldnames as keys.
+    
+    Arguments:
+        cursor: search cursor or update cursor.
+        
+    Yields:
+        dictionary of the cursor row.
     
     NOTE: This function will not overwrite the cursor object
     if used in a context manager and iterating through the yielded
