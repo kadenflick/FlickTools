@@ -6,6 +6,8 @@ from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
 from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
 from archelp import message
 
+class SQLError(Exception): ...
+
 class DescribeModel:
     """ Base object for models """
         
@@ -285,23 +287,24 @@ class Table(DescribeModel, MutableMapping):
     def _clause(self, prefix: str | None, postfix: str | None, field: str = None) -> Generator[dict[str, Any], None, None]:
         if field and not field in self.valid_fields: 
             raise ValueError(f"{field} not in {self.valid_fields}")
-        if ";" in prefix or ";" in postfix: 
+        if (prefix and ";" in prefix) or (postfix and ";" in postfix): 
             raise ValueError("SQL Injection detected")
         try:
             yield from as_dict(self.search_cursor(sql_clause=(prefix, postfix)))
         except RuntimeError as sql_error:
-            message(f"""Invalid SQL Clause ({prefix} {postfix})\
+            raise SQLError(f"""Invalid SQL Clause ({prefix} {postfix})\
                     \nMake sure your databse supports TOP, ORDER BY and DISTINCT\
                     \nTOP requres a SQL Server database (try using slices or range instead)\
                     \nORDER BY and DISTINCT require at least file geodatabase\
                     \n{sql_error}""", "warning")
     
     def _sort(self, field: str, reverse: bool, top: int = None) -> Generator[dict[str, Any], None, None]:
-        if not isinstance(top, int) or top < 1:
+        # Prevent SQL Injection and top values of 0 (0 evaluates to False)
+        if top and not isinstance(top, int):
             raise ValueError("top must be an integer greater than 0")
         yield from self._clause(
             prefix= f"TOP {top}" if top else None,
-            postfix=f"ORDER BY {field} {'DESC' if reverse else 'ASC'}", 
+            postfix=f"ORDER BY {field} {'DESC' if reverse else 'ASC'}",
             field=field)
     
     def dsort(self, field: str, top: int = None):
@@ -311,8 +314,9 @@ class Table(DescribeModel, MutableMapping):
         yield from self._sort(field, reverse=False, top=top)
     
     def group_by(self, field: str, top: int = None) -> Generator[dict[str, Any], None, None]:
-        if not top (top, int) or top < 1:
-            raise ValueError("top must be an integer greater than 0")
+        # Prevent SQL Injection and top values of 0 (0 evaluates to False)
+        if top and not isinstance(top, int):
+            raise ValueError("top must be an integer") # Prevent SQL Injection
         yield from self._clause(
             prefix=f"TOP {top}" if top else None, 
             postfix=f"GROUP BY {field}", 
