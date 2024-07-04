@@ -285,6 +285,8 @@ class Table(DescribeModel, MutableMapping):
     def _clause(self, prefix: str | None, postfix: str | None, field: str = None) -> Generator[dict[str, Any], None, None]:
         if field and not field in self.valid_fields: 
             raise ValueError(f"{field} not in {self.valid_fields}")
+        if ";" in prefix or ";" in postfix: 
+            raise ValueError("SQL Injection detected")
         try:
             yield from as_dict(self.search_cursor(sql_clause=(prefix, postfix)))
         except RuntimeError as sql_error:
@@ -295,6 +297,8 @@ class Table(DescribeModel, MutableMapping):
                     \n{sql_error}""", "warning")
     
     def _sort(self, field: str, reverse: bool, top: int = None) -> Generator[dict[str, Any], None, None]:
+        if not isinstance(top, int) or top < 1:
+            raise ValueError("top must be an integer greater than 0")
         yield from self._clause(
             prefix= f"TOP {top}" if top else None,
             postfix=f"ORDER BY {field} {'DESC' if reverse else 'ASC'}", 
@@ -307,6 +311,8 @@ class Table(DescribeModel, MutableMapping):
         yield from self._sort(field, reverse=False, top=top)
     
     def group_by(self, field: str, top: int = None) -> Generator[dict[str, Any], None, None]:
+        if not top (top, int) or top < 1:
+            raise ValueError("top must be an integer greater than 0")
         yield from self._clause(
             prefix=f"TOP {top}" if top else None, 
             postfix=f"GROUP BY {field}", 
