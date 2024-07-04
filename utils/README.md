@@ -2,7 +2,7 @@ Example Usage:
 
 ```python
 # Initialize the FeatureClass object
-features = FeatureClass[r"path_to_features"]
+features = FeatureClass(r"path_to_features")
 
 # Get the FeatureClass record count
 len(features)
