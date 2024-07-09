@@ -221,7 +221,7 @@ class Table(DescribeModel, MutableMapping):
             return
 
         if isinstance(idx, str) and idx in self.valid_fields:
-            yield from ( value[idx] for value in as_dict(self.search_cursor([idx])) )
+            yield from (value[idx] for value in as_dict(self.search_cursor([idx])))
             return
         
         if isinstance(idx, str):
@@ -521,4 +521,4 @@ def as_dict(cursor: SearchCursor | UpdateCursor) -> Generator[dict[str, Any], No
     yield from ( dict(zip(cursor.fields, row)) for row in cursor )
 
 if __name__ == "__main__":
-    pass    
+    pass
