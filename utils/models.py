@@ -4,7 +4,7 @@ import os
 from arcpy.mp import ArcGISProject
 from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
 from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
-from archelp import message
+from archelp import print
 
 class SQLError(Exception): ...
 
@@ -90,7 +90,7 @@ class Table(DescribeModel, MutableMapping):
         if not query_string: del self.query
         try:
             with self.search_cursor(where_clause=query_string) as cur: cur.fields
-        except Exception as e: message(f"Invalid query string ({query_string})\n{e}", "warning")
+        except Exception as e: print(f"Invalid query string ({query_string})\n{e}", "warning")
         self._query = query_string
         self._updated = True
         self.queried = True
@@ -119,7 +119,7 @@ class Table(DescribeModel, MutableMapping):
             with self.search_cursor(spatial_filter=filter_shape) as cur:
                 cur.fields
         except Exception as e:
-            message(f"Invalid spatial filter ({filter_shape})\n{e}", "warning")
+            print(f"Invalid spatial filter ({filter_shape})\n{e}", "warning")
         self._spatial_filter = filter_shape
         self._updated = True
         self.queried = True

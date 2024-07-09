@@ -1,8 +1,12 @@
 import arcpy
+import builtins
 import os
 import shutil
 import json
 
+import functools
+from functools import wraps
+from typing import Literal
 from enum import Enum
 
 class controlCLSID(Enum):
@@ -38,19 +42,29 @@ class Parameters(object):
     
 def sanitize_filename(filename: str) -> str:
     """ Sanitize a filename """
-    return "".join([char for char in filename if char.isalnum() or char in [" ", "_", "-"]])
+    return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
 
-def message(message: str, severity: str = "info") -> None:
-    """ Print a message """
-    match severity.lower():
-        case "info":
-            arcpy.AddMessage(message)
-            print(f"info: {message}")
-        case "warning":
-            arcpy.AddWarning(message)
-            print(f"warning: {message}")
-        case "error":
-            arcpy.AddError(message)
-            print(f"error: {message}")
+def print(*values: object,
+          sep: str = " ",
+          end: str = "\n",
+          file = None,
+          flush: bool = False,
+          severity: Literal['INFO', 'WARNING', 'ERROR'] = "INFO"):
+    """ Print a message to the ArcGIS Pro message queue and stdout
+    set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
+    """
+    # Join the values into a single string
+    message = f"{sep.join(map(str, values))}"
+    
+    # Print the message to stdout
+    builtins.print(f"{severity+': ' if severity != 'INFO' else ''}{sep.join(values)}", sep=sep, end=end, file=file, flush=flush)
+    
+    # Print the message to the ArcGIS Pro message queue with the appropriate severity
+    match severity:
+        case "WARNING":
+            arcpy.AddWarning(f"{message}")
+        case "ERROR":
+            arcpy.AddError(f"{message}")
+        case _:
+            arcpy.AddMessage(f"{message}")
     return
-
