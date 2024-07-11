@@ -194,18 +194,13 @@ class Table(DescribeModel, MutableMapping):
     def __iter__(self) -> Generator[dict[str, Any], None, None]:
         yield from as_dict(self.search_cursor())
     
-    def __next__(self) -> dict[str, Any]:
-        if not self._iter:
-            self._iter = as_dict(self.search_cursor())
-        try:
-            return next(self._iter)
-        except StopIteration:
-            self._iter = None
-            raise StopIteration
-        
     def __len__(self) -> int:
-        if self.queried: return self._queried_count
-        if not self._updated: return self.record_count
+        if self.queried: 
+            return self._queried_count
+        
+        if not self._updated:
+            return self.record_count
+        
         self._updated = False
         self.record_count = int(arcpy.management.GetCount(self.path).getOutput(0))
         return self.record_count
@@ -216,16 +211,17 @@ class Table(DescribeModel, MutableMapping):
         # >>> table[1] -> <generator object Table...>
         # >>> next(table[1]) -> {field: value}
         # This allows a reference to the object to be stored before using it
-        if isinstance(idx, int) and idx in self._oid_set:
-            yield from as_dict(self.search_cursor(where_clause=f"{self.OIDField} = {idx}"))
-            return
+        if isinstance(idx, int):
+            if not idx in self._oid_set:
+                raise KeyError(f"{idx} not a valid OID")
+            #yield from as_dict(self.search_cursor(where_clause=f"{self.OIDField} = {idx}"))
+            return next(as_dict(self.search_cursor(where_clause=f"{self.OIDField} = {idx}")))
 
-        if isinstance(idx, str) and idx in self.valid_fields:
+        if isinstance(idx, str):
+            if idx not in self.fieldnames:
+                raise KeyError(f"{idx} not in {self.valid_fields}")
             yield from (value[idx] for value in as_dict(self.search_cursor([idx])))
             return
-        
-        if isinstance(idx, str):
-            raise KeyError(f"{idx} not in {self.valid_fields}")
         
         if isinstance(idx, Iterable) and all(field in self.valid_fields for field in idx):
             yield from as_dict(self.search_cursor(idx))
