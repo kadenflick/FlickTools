@@ -1,13 +1,13 @@
 import arcpy
 import subprocess
 import os
+from pathlib import Path
 
 from utils.tool import Tool
-from utils import archelp
-from utils import models
+from utils.archelp import print
 
 class VersionControl(Tool):
-    WORKDIR = os.path.join(os.path.dirname(__file__), "..")
+    WORKDIR = Path(__file__).parents[2].absolute()
     if os.path.exists(os.path.join(WORKDIR, ".git")):
         BRANCHES = \
             subprocess.run(
@@ -16,7 +16,8 @@ class VersionControl(Tool):
                 capture_output=True,
                 text=True,
                 shell=True,
-            ).stdout.strip().replace('*','').strip().split("\n  ")
+            ).stdout.replace('*','').strip().split("\n")
+        BRANCHES = [branch.strip() for branch in BRANCHES]
 
         ACTIVE_BRANCH = \
             subprocess.run(
@@ -96,11 +97,11 @@ class VersionControl(Tool):
                     capture_output=True, 
                     text=True
                 )
-            archelp.print(result.stdout)
+            print(result.stdout)
             if result.stderr:
-                archelp.print(result.stderr, severity="ERROR")
+                print(result.stderr, severity="ERROR")
                 if "not a git repository" in result.stderr:
-                    archelp.print("No Git Repository Found, please initialize a repository.", severity="ERROR")
+                    print("No Git Repository Found, please initialize a repository.", severity="ERROR")
         elif VersionControl.ACTIVE_BRANCH != params.branch.value:
             result =\
                 subprocess.run(
@@ -110,9 +111,9 @@ class VersionControl(Tool):
                     text=True,
                     shell=True,
                 )
-            archelp.print(result.stdout)
+            print(result.stdout)
         
-        archelp.print(self.get_status())
+        print(self.get_status())
         
     def get_status(self) -> str:
         try:
