@@ -284,7 +284,7 @@ class Table(DescribeModel, MutableMapping):
         if field and not field in self.valid_fields: 
             raise ValueError(f"{field} not in {self.valid_fields}")
         if (prefix and ";" in prefix) or (postfix and ";" in postfix): 
-            raise ValueError("SQL Injection detected")
+            raise SQLError("SQL Injection detected")
         try:
             yield from as_dict(self.search_cursor(sql_clause=(prefix, postfix)))
         except RuntimeError as sql_error:
