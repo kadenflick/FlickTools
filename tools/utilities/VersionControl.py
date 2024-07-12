@@ -8,22 +8,27 @@ from utils import models
 
 class VersionControl(Tool):
     WORKDIR = os.path.join(os.path.dirname(__file__), "..")
-    BRANCHES = \
-        subprocess.run(
-            ["git", "branch", "-a"], 
-            cwd=WORKDIR, 
-            capture_output=True,
-            text=True,
-            shell=True,
-        ).stdout.strip().replace('*','').strip().split("\n  ")
-    ACTIVE_BRANCH = \
-        subprocess.run(
-            ["git", "branch", "--show-current"], 
-            cwd=WORKDIR, 
-            capture_output=True,
-            text=True,
-            shell=True,
-        ).stdout.strip()
+    if os.path.exists(os.path.join(WORKDIR, ".git")):
+        BRANCHES = \
+            subprocess.run(
+                ["git", "branch", "-a"], 
+                cwd=WORKDIR, 
+                capture_output=True,
+                text=True,
+                shell=True,
+            ).stdout.strip().replace('*','').strip().split("\n  ")
+
+        ACTIVE_BRANCH = \
+            subprocess.run(
+                ["git", "branch", "--show-current"], 
+                cwd=WORKDIR, 
+                capture_output=True,
+                text=True,
+                shell=True,
+            ).stdout.strip()
+    else:
+        BRANCHES = ["No Git Repository Found"]
+        ACTIVE_BRANCH = "No Git Repository Found"
         
     def __init__(self) -> None:
         super().__init__()
@@ -91,9 +96,11 @@ class VersionControl(Tool):
                     capture_output=True, 
                     text=True
                 )
-            archelp.message(result.stdout)
+            archelp.print(result.stdout)
             if result.stderr:
-                archelp.message(result.stderr, "error")
+                archelp.print(result.stderr, severity="ERROR")
+                if "not a git repository" in result.stderr:
+                    archelp.print("No Git Repository Found, please initialize a repository.", severity="ERROR")
         elif VersionControl.ACTIVE_BRANCH != params.branch.value:
             result =\
                 subprocess.run(
@@ -103,9 +110,9 @@ class VersionControl(Tool):
                     text=True,
                     shell=True,
                 )
-            archelp.message(result.stdout)
+            archelp.print(result.stdout)
         
-        archelp.message(self.get_status())
+        archelp.print(self.get_status())
         
     def get_status(self) -> str:
         try:
