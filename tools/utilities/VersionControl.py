@@ -2,39 +2,23 @@ import arcpy
 import subprocess
 import os
 from pathlib import Path
+from typing import Literal
 
 from utils.tool import Tool
 import utils.archelp as archelp
 from utils.archelp import print
 
 class VersionControl(Tool):
-    WORKDIR = Path(__file__).parents[2].absolute()
-    if os.path.exists(os.path.join(WORKDIR, ".git")):
-        BRANCHES = \
-            subprocess.run(
-                ["git", "branch", "-a"], 
-                cwd=WORKDIR, 
-                capture_output=True,
-                text=True,
-                shell=True,
-            ).stdout.replace('*','').strip().split("\n")
-        BRANCHES = [branch.strip() for branch in BRANCHES]
-
-        ACTIVE_BRANCH = \
-            subprocess.run(
-                ["git", "branch", "--show-current"], 
-                cwd=WORKDIR, 
-                capture_output=True,
-                text=True,
-                shell=True,
-            ).stdout.strip()
-    else:
-        BRANCHES = ["No Git Repository Found"]
-        ACTIVE_BRANCH = "No Git Repository Found"
-        
+    __slots__ = ["active_branch", "branches", "workdir"]
+    
     def __init__(self) -> None:
         super().__init__()
-        self.label = f"Version Control ({VersionControl.ACTIVE_BRANCH})"
+        
+        self.workdir: os.PathLike = Path(__file__).parents[2].absolute()
+        self.active_branch: str = self.get_active_branch()
+        self.branches: list[str] = self.get_branches()
+              
+        self.label = f"Version Control ({self.active_branch})"
         self.description = "Pulls the latest changes from the remote repository or switches to a different branch."
         self.category = "Verson Control"
         return
@@ -47,9 +31,9 @@ class VersionControl(Tool):
             parameterType="Optional",
             direction="Input",
         )
-        branch.value = VersionControl.ACTIVE_BRANCH
+        branch.value = self.active_branch
         branch.filter.type = "ValueList"
-        branch.filter.list = VersionControl.BRANCHES
+        branch.filter.list = self.branches
         
         status = arcpy.Parameter(
             displayName="Status",
@@ -75,54 +59,48 @@ class VersionControl(Tool):
     def updateParameters(self, parameters: list) -> None:
         params = archelp.Parameters(parameters)
         
-        if params.branch.value != VersionControl.ACTIVE_BRANCH:
+        if params.branch.value != self.active_branch:
             params.pull.value = False
             params.pull.enabled = False
         else:
             params.pull.enabled = True
         
         params.status.value = self.get_status()
-        
         return
     
     def execute(self, parameters:list, messages:list) -> None:
         params = archelp.Parameters(parameters)
         
         if params.pull.value:
-            result =\
-                subprocess.run(
-                    ["git", "pull"], cwd=VersionControl.WORKDIR, 
-                    capture_output=True, 
-                    text=True
-                )
-            print(result.stdout)
-            if result.stderr:
-                print(result.stderr, severity="ERROR")
-                if "not a git repository" in result.stderr:
-                    print("No Git Repository Found, please initialize a repository.", severity="ERROR")
-        elif VersionControl.ACTIVE_BRANCH != params.branch.value:
-            result =\
-                subprocess.run(
-                    ["git", "checkout", params.branch.value], 
-                    cwd=VersionControl.WORKDIR, 
-                    capture_output=True, 
-                    text=True,
-                    shell=True,
-                )
-            print(result.stdout)
-        
+            print(self.git_subprocess("pull", None, self.workdir).stdout)
+        elif self.active_branch != params.branch.value:
+            print(self.git_subprocess("checkout", params.branch.value, self.workdir).stdout)
         print(self.get_status())
         
     def get_status(self) -> str:
-        try:
-            status = \
-                subprocess.run(
-                    ["git", "status"], 
-                    cwd=VersionControl.WORKDIR, 
-                    capture_output=True,
-                    text=True,
-                    shell=True,
-                ).stdout.strip()
-            return status
-        except subprocess.CalledProcessError as e:
-            return f"Error: {e}"
+        return self.git_subprocess("status", None, self.workdir).stdout.strip()
+    
+    def get_branches(self) -> list[str]:
+        return self.parse_git_branches(self.git_subprocess("branch", "-a", self.workdir).stdout)
+    
+    def get_active_branch(self) -> str:
+        return self.git_subprocess("branch", "--show-current", self.workdir).stdout.strip()
+    
+    @staticmethod
+    def git_subprocess(command: Literal["branch", "pull", "checkout", "status"], 
+                   flag: Literal["-a", "--show-current"] | str | None,
+                   cwd: os.PathLike = None) -> subprocess.CompletedProcess:
+        """ Run a git command using subprocess """
+        result = subprocess.run(
+            ["git", command] + ([flag] if flag else []), 
+            cwd=cwd, 
+            capture_output=True, 
+            text=True,
+            shell=True,
+        )
+        return result
+    
+    @staticmethod
+    def parse_git_branches(git_branches: str) -> list:
+        """ Parse the output of 'git branch -a' """
+        return [branch.strip().replace('*', '').lstrip() for branch in git_branches.strip().split('\n')]
