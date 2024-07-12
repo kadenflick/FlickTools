@@ -27,7 +27,7 @@ from utils.reloader import import_tools
 
 TOOLS = \
 {
-    "prod":
+    "production":
         [
             "VertexBuffer",
         ],
