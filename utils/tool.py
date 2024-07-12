@@ -14,7 +14,7 @@ class Tool(ABC):
         """
         # Tool parameters
         self.label = "Tool"
-        self.description = "Base class for all tools that use python objects to build parameters"
+        self.description = "Base class for all tools"
         self.canRunInBackground = False
         self.category = "Unassigned"
         
