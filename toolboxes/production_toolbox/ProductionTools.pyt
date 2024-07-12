@@ -27,11 +27,11 @@ from utils.reloader import import_tools
 
 TOOLS = \
 {
-    "tools.prod":
+    "prod":
         [
             "VertexBuffer",
         ],
-    "tools.utility":
+    "utility":
         [
             "VersionControl",
         ],
