@@ -25,6 +25,7 @@ import utils.tool as pyt_reload_tool
 # Import the Tool Importer function
 from utils.reloader import import_tools
 
+## TODO: Move this to a configuration file
 TOOLS = \
 {
     "production":
@@ -38,6 +39,8 @@ TOOLS = \
 }
 
 IMPORTS = import_tools(TOOLS)
+
+# Manually add the tools to the global namespace
 globals().update({tool.__name__: tool for tool in IMPORTS})
 
 class Toolbox(object):
