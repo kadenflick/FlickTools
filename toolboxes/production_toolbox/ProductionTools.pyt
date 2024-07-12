@@ -31,7 +31,7 @@ TOOLS = \
         [
             "VertexBuffer",
         ],
-    "utility":
+    "utilities":
         [
             "VersionControl",
         ],
