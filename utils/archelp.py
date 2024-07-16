@@ -49,7 +49,7 @@ def print(*values: object,
           end: str = "\n",
           file = None,
           flush: bool = False,
-          severity: Literal['INFO', 'WARNING', 'ERROR'] = "INFO"):
+          severity: Literal['INFO', 'WARNING', 'ERROR'] = None):
     """ Print a message to the ArcGIS Pro message queue and stdout
     set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
     """
@@ -57,7 +57,8 @@ def print(*values: object,
     message = f"{sep.join(map(str, values))}"
     
     # Print the message to stdout
-    builtins.print(f"{severity}: {sep.join(values)}", sep=sep, end=end, file=file, flush=flush)
+    if severity: *values.insert(severity+': ', 0)
+    builtins.print(*values, sep=sep, end=end, file=file, flush=flush)
     
     # Print the message to the ArcGIS Pro message queue with the appropriate severity
     match severity:
