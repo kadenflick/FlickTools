@@ -57,7 +57,7 @@ def print(*values: object,
     message = f"{sep.join(map(str, values))}"
     
     # Print the message to stdout
-    builtins.print(f"{severity+': ' if severity != 'INFO' else ''}{sep.join(values)}", sep=sep, end=end, file=file, flush=flush)
+    builtins.print(f"{severity}: {sep.join(values)}", sep=sep, end=end, file=file, flush=flush)
     
     # Print the message to the ArcGIS Pro message queue with the appropriate severity
     match severity:
