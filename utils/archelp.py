@@ -54,7 +54,7 @@ def print(*values: object,
     set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
     """
     # Join the values into a single string
-    message = f"{sep.join(map(str, values))}"
+    message = f"{sep.join(map(str, values))}{end}"
     
     # Print the message to stdout
     if severity: *values.insert(0, f"{severity}: ")
