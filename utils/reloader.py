@@ -1,11 +1,6 @@
 from importlib import reload, import_module
 from traceback import format_exc
-from typing import Any
-
-from archelp import print
 from tool import Tool
-
-DEVELOPER_NAME = "Developer Name"
 
 def placeholder_tool(tool_name: str, exception: Exception, traceback: str) -> type[Tool]:
     """ Higher order function for creating a tool class that represents a broken tool. """
@@ -20,13 +15,13 @@ def placeholder_tool(tool_name: str, exception: Exception, traceback: str) -> ty
 
 def get_module(module_name: str) -> type[Tool]:
     *_, tool = module_name.rsplit(".", 1)
-    try: 
+    try:
         return getattr(reload(import_module(module_name)), tool)
     
     # Catch all exceptions beacuse the imported class can raise any exception
     # The placeholder makes this obvious in the ArcGIS Pro GUI and we write the
     # Traceback to the description of the _BrokenImport 'tool' for easy debugging
-    except Exception as e: 
+    except Exception as e:
         return placeholder_tool(tool, e, format_exc(limit=1))
 
 def import_tools(tool_dict: dict[str, list[str]], tool_module_name: str = "tools") -> list[type[Tool]]:
