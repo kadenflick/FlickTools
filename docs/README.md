@@ -19,7 +19,7 @@ To immediately test out the included tools and toolboxes, you can navigate to:
     └── production_toolbox/
         └── ProductionTools.pyt
 
-and add the `ProductionTools` tool file to your project
+and add the `ProductionTools` toolbox file to your project
 
 ### Advanced Start
 To start writing your own tools, you can copy one of the example tools or start a fresh file in one of the tool modules. The only requirement for a tool file is that the filename matches the tool class name.
