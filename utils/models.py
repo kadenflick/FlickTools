@@ -76,7 +76,7 @@ class Table(DescribeModel):
         self._updated: bool = False
         self.record_count: int = int(arcpy.management.GetCount(self.path).getOutput(0))
         self._oid_set: set[int] = set(self[self.OIDField])
-        self.editor = self._get_editor() # sets a valid workspace
+        self.editor: Editor = self._get_editor() # sets a valid workspace
         self._iter = None
         return
     
@@ -156,7 +156,7 @@ class Table(DescribeModel):
             return False
         return True
     
-    def _get_editor(self):
+    def _get_editor(self) -> Editor:
         """ Get the editor of the table (walks up the directory tree until it finds a valid workspace)"""
         valid_workspace = False
         while not valid_workspace:
