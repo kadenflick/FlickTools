@@ -70,8 +70,9 @@ class GDBMerger(Tool):
         params = archelp.Parameters(parameters)
         
         if params['target_gdb'].value and params['target_gdb'].altered:
-            params['features_to_merge'].filter.list = [fc.split(r'\\')[-1] for fc in Workspace(params['target_gdb'].valueAsText).featureclasses]
-            params['tables_to_merge'].filter.list = [tbl for tbl in Workspace(params['target_gdb'].valueAsText).tables]
+            wsp = Workspace(params['target_gdb'].valueAsText)
+            params['features_to_merge'].filter.list = list(wsp.featureclasses)
+            params['tables_to_merge'].filter.list = list(wsp.tables)
         return
     
     def execute(self, parameters: list[Parameter], messages: list[object]) -> None:
@@ -90,13 +91,17 @@ class GDBMerger(Tool):
             tables_to_merge: list[str] = [str(v) for v in params["tables_to_merge"].values]
             
         input_gdbs: list[object] = params["input_gdbs"].values
-        target_gdb: Workspace = Workspace(params["target_gdb"].valueAsText, featureclass_filter=features_to_merge, table_filter=tables_to_merge)
+        target_gdb: Workspace = Workspace(params["target_gdb"].valueAsText, 
+                                          featureclass_filter=features_to_merge, 
+                                          table_filter=tables_to_merge)
         strict_merge: bool = params["strict_merge"].value
         arcpy.ResetProgressor()
         
         for gdb_idx, input_gdb in enumerate(input_gdbs, start=1):
             arcpy.SetProgressor("step", "Reading Next Input Schema", gdb_idx, len(input_gdbs), 1)
-            input_gdb = Workspace(arcpy.Describe(input_gdb).catalogPath, featureclass_filter=features_to_merge, table_filter=tables_to_merge)
+            input_gdb = Workspace(arcpy.Describe(input_gdb).catalogPath, 
+                                  featureclass_filter=features_to_merge, 
+                                  table_filter=tables_to_merge)
             
             # Abide by strict merge rules on a per-geodatabase basis
             if not (target_gdb == input_gdb) and strict_merge:
@@ -108,9 +113,11 @@ class GDBMerger(Tool):
             for tbl_idx, table in enumerate(to_merge, start=1):
                 source: Table = input_gdb[table]
                 target: Table = target_gdb[table]
+                
                 if len(source) == 0:
                     print(f"\t{source.name} has no rows to merge! ⛔")
                     continue
+                
                 print(f"\t{source.name} {tbl_idx}/{len(to_merge)}: {len(source)} rows")
                 
                 # Abide by strict merge rules on a per-table basis
