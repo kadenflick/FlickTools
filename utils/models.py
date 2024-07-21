@@ -1,9 +1,10 @@
+from types import UnionType
 import arcpy
 import os
 
 from arcpy.mp import ArcGISProject
 from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
-from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
+from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping, Self
 from archelp import print
 
 class SQLError(Exception): ...
@@ -46,7 +47,7 @@ class DescribeModel:
     def __str__(self):
         return f"{type(self).__name__}: {self.basename} - {self.path}"
 
-class Table(DescribeModel, MutableMapping):
+class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     
     ALL_FIELDS = object()
@@ -186,6 +187,8 @@ class Table(DescribeModel, MutableMapping):
             return UpdateCursor(self.path, fields, **kwargs)
         
         if cur_type == "insert":
+            # InsertCursor only supports datum_transformation and explicit kwargs
+            kwargs = {k:v for k, v in kwargs.items() if k in ['datum_transformation', 'explicit']}
             self._updated = True
             return InsertCursor(self.path, fields, **kwargs)
         
@@ -280,6 +283,22 @@ class Table(DescribeModel, MutableMapping):
         
         raise KeyError(f"{idx} not in {self.valid_fields}")
     
+    def __or__(self, other: Self) -> list[str]:
+        """ Set style override that gives the union of two tables fields """
+        return list(set(self.fieldnames) | set(other.fieldnames))
+    
+    def __and__(self, other: Self) -> list[str]:
+        """ Set style override that gives the intersection of two tables fields """
+        return list(set(self.fieldnames) & set(other.fieldnames))
+    
+    def __eq__(self, other: Self) -> bool:
+        """ Override the equality operator to compare fieldnames """
+        return self.fieldnames == other.fieldnames
+    
+    def __sub__(self, other: Self) -> list[str]:
+        """ Set style override that gives the difference of two tables fields """
+        return list(set(self.fieldnames) - set(other.fieldnames))
+        
     def _clause(self, prefix: str | None, postfix: str | None, field: str = None) -> Generator[dict[str, Any], None, None]:
         if field and not field in self.valid_fields: 
             raise ValueError(f"{field} not in {self.valid_fields}")
@@ -424,12 +443,14 @@ class ShapeFile(FeatureClass): ...
 
 class FeatureDataset(DescribeModel): ...
 
+ALL = object()
+
 class Workspace(DescribeModel):
     
     def __init__(self, path: os.PathLike, *,
-                 dataset_filter: list[str]=None,
-                 featureclass_filter: list[str]=None,
-                 table_filter: list[str]=None):
+                 dataset_filter: list[str]=ALL,
+                 featureclass_filter: list[str]=ALL,
+                 table_filter: list[str]=ALL):
         super().__init__(path)
         
         self.dataset_filter = dataset_filter
@@ -438,36 +459,31 @@ class Workspace(DescribeModel):
         arcpy.env.workspace = self.path
         self.datasets: dict[str, FeatureDataset] = \
             {
-                ds: FeatureDataset(os.path.join(self.path, ds)) 
+                ds: os.path.join(self.path, ds)
                 for ds in arcpy.ListDatasets()
-                if not self.dataset_filter or ds in self.dataset_filter
+                if dataset_filter == ALL or (dataset_filter and ds in dataset_filter)
             }
         self.featureclasses: dict[str, FeatureClass] = \
             {
-                fc: FeatureClass(os.path.join(self.path, fc)) 
+                fc: os.path.join(self.path, fc)
                 for fc in arcpy.ListFeatureClasses()
-                if not self.featureclass_filter or fc in self.featureclass_filter
+                if featureclass_filter == ALL or (featureclass_filter and fc in featureclass_filter)
             }
         for ds in self.datasets.keys():
             self.featureclasses.update(
                 {
-                    fc: FeatureClass(os.path.join(self.path, ds, fc))
+                    f"{ds}/{fc}": os.path.join(self.path, ds, fc)
                     for fc in arcpy.ListFeatureClasses(feature_dataset=ds)
-                    if not self.featureclass_filter or fc in self.featureclass_filter
+                    if featureclass_filter == ALL or (featureclass_filter and fc in featureclass_filter)
                 }
             )
         self.tables: dict[str, Table] = \
             {
-                tbl: Table(os.path.join(self.path, tbl)) 
+                tbl: os.path.join(self.path, tbl)
                 for tbl in arcpy.ListTables()
-                if not self.table_filter or tbl in self.table_filter
+                if table_filter == ALL or (table_filter and tbl in table_filter)
             }
         return
-    
-    def __iter__(self) -> Generator[FeatureClass | Table | FeatureDataset, None, None]:
-        yield from self.featureclasses.values()
-        yield from self.tables.values()
-        yield from self.datasets.values()
     
     def __len__(self) -> int:
         return len(self.featureclasses) + len(self.tables) + len(self.datasets)
@@ -482,10 +498,39 @@ class Workspace(DescribeModel):
     \tDatasets:{list(self.datasets.keys())}"""
     
     def __getitem__(self, idx: str) -> FeatureClass | Table | FeatureDataset:
-        if idx in self.featureclasses: return self.featureclasses[idx]
-        if idx in self.tables: return self.tables[idx]
-        if idx in self.datasets: return self.datasets[idx]
+        # Doing some lazy loading here to prevent initializing all the children
+        # This distributes the ~ 5 seconds of initialization time across the
+        # number of children in the workspace and only initializes the child
+        # when it is first accessed.
+        if idx in self.featureclasses:
+            if not isinstance(self.featureclasses[idx], FeatureClass):
+                self.featureclasses[idx] = FeatureClass(self.featureclasses[idx])
+            return self.featureclasses[idx]
+        if idx in self.tables:
+            if not isinstance(self.tables[idx], Table):
+                self.tables[idx] = Table(self.tables[idx])
+            return self.tables[idx]
+        if idx in self.datasets:
+            if not isinstance(self.datasets[idx], FeatureDataset):
+                self.datasets[idx] = FeatureDataset(self.datasets[idx])
+            return self.datasets[idx]
         raise KeyError(f"{idx} not in {self.featureclasses.keys()} or {self.tables.keys()} or {self.datasets.keys()}")
+    
+    def __eq__(self, other: Self) -> bool:
+        """ Override the equality operator to compare children """
+        return (*self.featureclasses, *self.tables) == (*other.featureclasses, *other.tables)
+    
+    def __or__(self, other: Self) -> list[str]:
+        """ Set style override that gives the union of two workspaces children """
+        return list(set([*self.featureclasses, *self.tables]) | set([*other.featureclasses, *other.tables]))
+    
+    def __and__(self, other: Self) -> list[str]:
+        """ Set style override that gives the intersection of two workspaces children """
+        return list(set([*self.featureclasses, *self.tables]) & set([*other.featureclasses, *other.tables]))
+    
+    def __sub__(self, other: Self) -> list[str]:
+        """ Set style override that gives the difference of two workspaces children """
+        return list(set([*self.featureclasses, *self.tables]) - set([*other.featureclasses, *other.tables]))
 
 
 def as_dict(cursor: SearchCursor | UpdateCursor) -> Generator[dict[str, Any], None, None]:
