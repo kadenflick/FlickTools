@@ -1,4 +1,4 @@
-# pytframe2
+I'm# pytframe2
 
 A framework for building an maintaining python toolboxes for ArcGIS Pro 
 
@@ -91,6 +91,5 @@ I will be glad to explain and prioritize development and documentation in areas 
 
 ## License
 
-This project is licensed under the [The MIT License](LICENSE)
-Creative Commons License - see the [LICENSE.md](LICENSE.md) file for
+This project is licensed under the [The MIT License](LICENSE) - see the [LICENSE.md](LICENSE.md) file for
 details
