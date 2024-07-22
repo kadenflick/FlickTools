@@ -19,6 +19,7 @@ if rf"{ROOT}\utils" not in sys.path:
 import utils.reloader as pyt_reload_reloader 
 import utils.archelp as pyt_reload_archelp
 import utils.tool as pyt_reload_tool
+import utils.models as pyt_reload_models
 
 # Inline reloader of dynamic modules
 [
@@ -37,6 +38,7 @@ TOOLS =\
     "development":
         [
             "DevTool",
+            "GDBMerger",
         ],
     "utilities":
         [

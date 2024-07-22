@@ -6,7 +6,7 @@ import os
 import shutil
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Any
 from enum import Enum
 
 class controlCLSID(Enum):
@@ -49,16 +49,16 @@ def print(*values: object,
           end: str = "\n",
           file = None,
           flush: bool = False,
-          severity: Literal['INFO', 'WARNING', 'ERROR'] = "INFO"):
+          severity: Literal['INFO', 'WARNING', 'ERROR'] = None):
     """ Print a message to the ArcGIS Pro message queue and stdout
     set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
     """
-    # Join the values into a single string
-    message = f"{sep.join(map(str, values))}"
-    
+        
     # Print the message to stdout
-    builtins.print(f"{severity+': ' if severity != 'INFO' else ''}{sep.join(values)}", sep=sep, end=end, file=file, flush=flush)
+    builtins.print(*values, sep=sep, end=end, file=file, flush=flush)
     
+    end = "" if end is '\n' else end
+    message = f"{sep.join(map(str, values))}{end}"
     # Print the message to the ArcGIS Pro message queue with the appropriate severity
     match severity:
         case "WARNING":
