@@ -1,6 +1,7 @@
 import arcpy
 import os
 
+import arcpy.typing.describe as typdesc
 from arcpy.mp import ArcGISProject
 from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
 from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping
@@ -14,7 +15,7 @@ class DescribeModel:
     def __init__(self, path: os.PathLike):
         self.path = path
         desc = self._validate()    
-        self.describe: Any = desc
+        self.describe: typdesc.base.Base = desc
         self.basename: str = desc.baseName
         self.workspace: os.PathLike = desc.path
         self.name: str = desc.name
@@ -53,6 +54,7 @@ class Table(DescribeModel, MutableMapping):
     
     def __init__(self, path: os.PathLike):
         super().__init__(path)
+        self.describe: typdesc.Table = self.describe
         self._query: str = None
         self._spatial_filter: arcpy.Geometry = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
@@ -399,6 +401,7 @@ class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
     def __init__(self, path: os.PathLike):
         super().__init__(path)
+        self.describe: typdesc.FeatureClass = self.describe
         self.spatialReference: arcpy.SpatialReference = self.describe.spatialReference
         self.shapeType: str = self.describe.shapeType
         self.cursor_tokens.extend(
@@ -420,9 +423,17 @@ class FeatureClass(Table):
         self.valid_fields = self.fieldnames + self.cursor_tokens
         self.fieldnames[self.fieldnames.index(self.describe.shapeFieldName)] = "SHAPE@"
       
-class ShapeFile(FeatureClass): ...
+class ShapeFile(FeatureClass):
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
+        self.describe: typdesc.ShapeFile = self.describe
+        return
 
-class FeatureDataset(DescribeModel): ...
+class FeatureDataset(DescribeModel):
+    def __init__(self, path: os.PathLike):
+        super().__init__(path)
+        self.describe: typdesc.base.Dataset = self.describe
+        return
 
 class Workspace(DescribeModel):
     
@@ -431,6 +442,7 @@ class Workspace(DescribeModel):
                  featureclass_filter: list[str]=None,
                  table_filter: list[str]=None):
         super().__init__(path)
+        self.describe: typdesc.Workspace = self.describe
         
         self.dataset_filter = dataset_filter
         self.featureclass_filter = featureclass_filter
