@@ -48,6 +48,36 @@ class DescribeModel:
     def __str__(self):
         return f"{type(self).__name__}: {self.basename} - {self.path}"
 
+#  TODO: The Table class is doing a lot of work and should probably be delegating functionality to other classes
+#      Proposed:
+#           FieldEditor: Add, Delete, Update fields
+#               >>> table = Table("path/to/table")
+#               >>> field_editor = FieldEditor(table, **kwargs)
+#               >>> field_editor.add_field("new_field", field_type="TEXT") or field_editor["NewField"] = "TEXT"
+#               >>> field_editor.delete_field("new_field") or del field_editor["NewField"]
+#           QueryManager: Add, Delete, Update queries
+#               >>> table = Table("path/to/table")
+#               >>> query_manager = QueryManager(table, **kwargs)
+#               >>> query_manager.set_query("new_query") or query_manager.query = "new_query"
+#               >>> query_manager.delete_query() or del query_manager.query
+#           CursorManager: Get Cursors
+#               >>> table = Table("path/to/table")
+#               >>> cursor_manager = CursorManager(table,**kwargs)
+#               >>> with cursor_manager.search_cursor() as cursor: cursor.fields
+#               >>> with cursor_manager.update_cursor() as cursor: cursor.fields
+#               >>> with cursor_manager.insert_cursor() as cursor: cursor.fields
+#           SpatialFilter: Add, Delete, Update spatial filters
+#               >>> table = Table("path/to/table", **kwargs)
+#               >>> spatial_filter = SpatialFilter(table)
+#               >>> spatial_filter.spatial_filter = arcpy.Point(0, 0)
+#               >>> spatial_filter.delete_spatial_filter() or del spatial_filter.spatial_filter
+#           EditManager: Create and manage Editor objects
+#               >>> table = Table("path/to/table")
+#               >>> edit_manager = EditManager(table, **kwargs)
+#               >>> with edit_manager as editor: ...
+#    basically any __dunder__ method that has an instance check to determine functionality should be delegated to a class that
+#    takes a Table object as a Dependency
+
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     
