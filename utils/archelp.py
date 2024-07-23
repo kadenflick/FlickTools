@@ -57,7 +57,7 @@ def print(*values: object,
     # Print the message to stdout
     builtins.print(*values, sep=sep, end=end, file=file, flush=flush)
     
-    end = "" if end is '\n' else end
+    end = "" if end == '\n' else end
     message = f"{sep.join(map(str, values))}{end}"
     # Print the message to the ArcGIS Pro message queue with the appropriate severity
     match severity:
