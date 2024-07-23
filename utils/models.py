@@ -574,6 +574,11 @@ class Workspace(DescribeModel):
         """ Set style override that gives the difference of two workspaces children """
         return list(set([*self.featureclasses, *self.tables]) - set([*other.featureclasses, *other.tables]))
 
+class Environment():
+    def __enter__(self):
+        for key, value in self.__dict__.items():
+            arcpy.env[key] = value
+        return self
 
 def as_dict(cursor: SearchCursor | UpdateCursor) -> Generator[dict[str, Any], None, None]:
     """Convert a search cursor or update cursor to an iterable dictionary generator
