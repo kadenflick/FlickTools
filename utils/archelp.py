@@ -26,7 +26,22 @@ class controlCLSID(Enum):
     SINGLE_VALUE_TABLE = '{1A1CA7EC-A47A-4187-A15C-6EDBA4FE0CF7}'
 
 class Parameters(list):
-    """ Parameters class to store the parameters of a tool. Can be used in place of a parameters list """
+    """ Parameters class that replaces the list of parameters in the tool functions
+        with an object that can be access the parameters by name, index, or attribute.
+    
+        USAGE
+            You still need tool functions to return a list of parameters as the parameters list
+            is rebuilt each time it is passed beteween the tool functions. That list can be immediately
+            converted to a Parameters object at the beginning of the function.
+        >>> def execute(self, parameters: list[arcpy.Parameter]) -> None:
+        >>>     parameters = Parameters(parameters)
+        >>>     paramA = parameters.paramA.value
+        or
+        >>>     paramA = parameters['paramA'].value
+        or
+        >>>     paramA = parameters[0].value
+        Assuming that paramA is the first parameter in the list of parameters
+    """
       
     def __init__(self, parameters: list[arcpy.Parameter]) -> None:
         self.__dict__.update({parameter.name: parameter for parameter in parameters})
