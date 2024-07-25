@@ -111,3 +111,18 @@ def print(*values: object,
         case _:
             arcpy.AddMessage(f"{message}")
     return
+
+def flip_polyline(polyline: arcpy.Polyline) -> arcpy.Polyline:
+    """ Flip a polyline """
+    if not polyline.isMultipart:
+        return arcpy.Polyline(arcpy.Array(reversed(polyline.getPart(0))), polyline.spatialReference)
+    flipped_parts = \
+        [
+            flip_polyline(
+                arcpy.Polyline(part, polyline.spatialReference)) 
+            for part in polyline
+        ]
+    line = flipped_parts[0]
+    for part in flipped_parts[1:]:
+        line = line.union(part)
+    return line
