@@ -36,11 +36,13 @@ CellSizes: TypeAlias = Literal[
     'number', 
     'layer name',
     ]
+
 CellAlignment: TypeAlias = Literal[
     'DEFAULT', 
     'ALIGN_WITH_PROCESSING_EXTENT', 
     'ALIGN_WITH_INPUT',
     ]
+
 CellProjectionMethods: TypeAlias = Literal[
     'CONVERT_UNITS', 
     'PRESERVE_RESOLUTION', 
@@ -120,6 +122,7 @@ PyramidOption: TypeAlias = Literal[
     'NONE', 
     'PYRAMIDS',
     ]
+
 PyramidLevels: TypeAlias = Literal[
     '-1', '0', '1', '2', '3', '4', '5', 
     '6', '7', '8', '9', '10', '11', '12', 
@@ -127,15 +130,18 @@ PyramidLevels: TypeAlias = Literal[
     '19', '20', '21', '22', '23', '24', 
     '25', '26', '27', '28', '29',
     ]
+
 Interpolation: TypeAlias = Literal[
     'NEAREST', 
     'BILINEAR', 
     'CUBIC',
     ]
+
 PyramidSkip: TypeAlias = Literal[
     'NO_SKIP', 
     'SKIP_FIRST'
     ]
+
 PyramidConfig: TypeAlias = tuple[
     PyramidOption,
     PyramidLevels, 
@@ -149,6 +155,7 @@ RasterCalculateStatistics: TypeAlias = Literal[
     'STATISTICS', 
     'NONE',
     ]
+
 RasterIgnore: TypeAlias = tuple[int, int]
 
 TinVersion: TypeAlias = Literal[
@@ -261,18 +268,3 @@ class Environment:
     
     def __str__(self) -> str:
         return repr(self)
-    
-if __name__ == "__main__":
-    print("Testing Environment Manager")
-    print("Before")
-    print(f"{env.compression=}")
-    print(f"Creating new environment with compression = 'LERC 1.0'")
-    e = Environment(compression='LERC 1.0')
-    print(e)
-    print(f"Using new environment in context manager")
-    with e:
-        print("with e:")
-        print(f"\t{env.compression=}")
-    print("Exiting Custom Environment")
-    print(f"{env.compression=}")
-    
