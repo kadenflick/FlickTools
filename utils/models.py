@@ -5,7 +5,7 @@ import os
 import arcpy.typing.describe as typdesc
 from arcpy.mp import ArcGISProject
 from arcpy.da import SearchCursor, UpdateCursor, InsertCursor, Editor
-from typing import overload, Any, Generator, Iterable, MutableMapping, Mapping, Self
+from typing import overload, Any, Generator, Iterable, Mapping, Self
 from archelp import print
 
 class SQLError(Exception): ...
