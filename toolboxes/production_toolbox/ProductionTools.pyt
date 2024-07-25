@@ -38,7 +38,6 @@ TOOLS =\
     "development":
         [
             "DevTool",
-            "GDBMerger",
         ],
     "utilities":
         [
@@ -47,6 +46,7 @@ TOOLS =\
     "production":
         [
             "VertexBuffer",
+            "GDBMerger",
         ]
 }
 
