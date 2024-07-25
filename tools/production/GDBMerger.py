@@ -4,7 +4,7 @@ from arcpy import Parameter
 from utils.tool import Tool
 from utils.models import Table, Workspace
 import utils.archelp as archelp
-from utils.archelp import print
+from utils.archelp import print, Parameters
 
 class GDBMerger(Tool):
     def __init__(self):
@@ -64,37 +64,35 @@ class GDBMerger(Tool):
         )
         tables_to_merge.filter.type = "ValueList"
         
-        return [input_gdbs, target_gdb, features_to_merge, tables_to_merge, strict_merge]
+        return [input_gdbs, target_gdb, strict_merge, features_to_merge, tables_to_merge]
     
     def updateParameters(self, parameters: list[Parameter]) -> None:
-        params = archelp.Parameters(parameters)
-        
-        if params['target_gdb'].value and params['target_gdb'].altered:
-            wsp = Workspace(params['target_gdb'].valueAsText)
-            params['features_to_merge'].filter.list = list(wsp.featureclasses)
-            params['tables_to_merge'].filter.list = list(wsp.tables)
+        parameters = Parameters(parameters)
+        if parameters.target_gdb.value and parameters.target_gdb.altered:
+            wsp = Workspace(parameters.target_gdb.valueAsText)
+            parameters.features_to_merge.filter.list = list(wsp.featureclasses)
+            parameters.tables_to_merge.filter.list = list(wsp.tables)
         return
     
     def execute(self, parameters: list[Parameter], messages: list[object]) -> None:
-        params = archelp.Parameters(parameters)
-
-        if not params["features_to_merge"].values and not params["tables_to_merge"].values:
+        parameters = Parameters(parameters)
+        if not parameters.features_to_merge.values and not parameters.tables_to_merge.values:
             print("No features or tables selected to merge", severity="ERROR")
             return
         
         arcpy.SetProgressor("step", "Reading Target Schema", 0, 1, 1)
         features_to_merge = None
         tables_to_merge = None
-        if params["features_to_merge"].values:
-            features_to_merge: list[str] = [str(v).split('/')[-1] for v in params["features_to_merge"].values]
-        if params["tables_to_merge"].values:
-            tables_to_merge: list[str] = [str(v) for v in params["tables_to_merge"].values]
+        if parameters.features_to_merge.values:
+            features_to_merge: list[str] = [str(v).split('/')[-1] for v in parameters.features_to_merge.values]
+        if parameters.tables_to_merge.values:
+            tables_to_merge: list[str] = [str(v) for v in parameters.tables_to_merge.values]
             
-        input_gdbs: list[object] = params["input_gdbs"].values
-        target_gdb: Workspace = Workspace(params["target_gdb"].valueAsText, 
+        input_gdbs: list[object] = parameters.input_gdbs.values
+        target_gdb: Workspace = Workspace(parameters.target_gdb.valueAsText, 
                                           featureclass_filter=features_to_merge, 
                                           table_filter=tables_to_merge)
-        strict_merge: bool = params["strict_merge"].value
+        strict_merge: bool = parameters.strict_merge.value
         arcpy.ResetProgressor()
         
         for gdb_idx, input_gdb in enumerate(input_gdbs, start=1):
