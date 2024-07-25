@@ -48,36 +48,6 @@ class DescribeModel:
     def __str__(self):
         return f"{type(self).__name__}: {self.basename} - {self.path}"
 
-#  TODO: The Table class is doing a lot of work and should probably be delegating functionality to other classes
-#      Proposed:
-#           FieldEditor: Add, Delete, Update fields
-#               >>> table = Table("path/to/table")
-#               >>> field_editor = FieldEditor(table, **kwargs)
-#               >>> field_editor.add_field("new_field", field_type="TEXT") or field_editor["NewField"] = "TEXT"
-#               >>> field_editor.delete_field("new_field") or del field_editor["NewField"]
-#           QueryManager: Add, Delete, Update queries
-#               >>> table = Table("path/to/table")
-#               >>> query_manager = QueryManager(table, **kwargs)
-#               >>> query_manager.set_query("new_query") or query_manager.query = "new_query"
-#               >>> query_manager.delete_query() or del query_manager.query
-#           CursorManager: Get Cursors
-#               >>> table = Table("path/to/table")
-#               >>> cursor_manager = CursorManager(table,**kwargs)
-#               >>> with cursor_manager.search_cursor() as cursor: cursor.fields
-#               >>> with cursor_manager.update_cursor() as cursor: cursor.fields
-#               >>> with cursor_manager.insert_cursor() as cursor: cursor.fields
-#           SpatialFilter: Add, Delete, Update spatial filters
-#               >>> table = Table("path/to/table", **kwargs)
-#               >>> spatial_filter = SpatialFilter(table)
-#               >>> spatial_filter.spatial_filter = arcpy.Point(0, 0)
-#               >>> spatial_filter.delete_spatial_filter() or del spatial_filter.spatial_filter
-#           EditManager: Create and manage Editor objects
-#               >>> table = Table("path/to/table")
-#               >>> edit_manager = EditManager(table, **kwargs)
-#               >>> with edit_manager as editor: ...
-#    basically any __dunder__ method that has an instance check to determine functionality should be delegated to a class that
-#    takes a Table object as a Dependency
-
 class Table(DescribeModel):
     """ Wrapper for basic Table operations """
     
@@ -85,12 +55,12 @@ class Table(DescribeModel):
     
     def __init__(self, path: os.PathLike):
         super().__init__(path)
-        self.describe: typdesc.Table = self.describe
+        self._describe: typdesc.Table = self._describe
         self._query: str = None
         self._spatial_filter: arcpy.Geometry = None
         self.fields: dict[str, arcpy.Field] = {field.name: field for field in arcpy.ListFields(self.path)}
         self.fieldnames: list[str] = list(self.fields.keys())
-        self.OIDField: str = self.describe.OIDFieldName
+        self.OIDField: str = self._describe.OIDFieldName
         self.cursor_tokens: list[str] = \
             [
                 "CREATED@",
@@ -167,6 +137,23 @@ class Table(DescribeModel):
         self.queried = False
         self._oid_set = set(self[self.OIDField])
         return
+    
+    @property
+    def describe(self) -> typdesc.Table:
+        """ Get the describe object """
+        self._describe = arcpy.Describe(self.path)
+        return self._describe
+    
+    @describe.setter
+    def describe(self, _):
+        raise AttributeError("Describe object is read-only")
+    
+    @describe.deleter
+    def describe(self):
+        raise AttributeError("Describe object is read-only")
+    
+    # This query handling is kinda messy
+    # TODO: Create a QueryManager class that handles query operations
     
     def _handle_queries(self, kwargs):
         if 'where_clause' in kwargs and self.query:
@@ -304,7 +291,6 @@ class Table(DescribeModel):
         if isinstance(idx, Iterable) and all(field in self.fieldnames for field in idx):
             for field in idx:
                 self.delete_field(field, _update=False)
-            self.update()
             return
          
         if isinstance(idx, Iterable) and all(oid in self._oid_set for oid in idx):
@@ -405,7 +391,8 @@ class Table(DescribeModel):
         kwargs: See arcpy.management.AddField for kwargs
         """
         arcpy.management.AddField(self.path, field_name, **kwargs)
-        self.update()
+        self.fieldnames.append(field_name)
+        self.fields[field_name], *_ = arcpy.ListFields(self.path, field_name)
         return
     
     def delete_field(self, field_name: str, _update=True) -> None:
@@ -413,7 +400,8 @@ class Table(DescribeModel):
         field_name: name of the field to delete
         """
         arcpy.management.DeleteField(self.path, field_name)
-        if _update: self.update()
+        self.fieldnames.remove(field_name)
+        self.fields.pop(field_name)
         return
     
     def to_json(self, **kwargs) -> str:
@@ -431,20 +419,6 @@ class Table(DescribeModel):
         """  returns a geojson string of the Table/Features
         """
         return self.to_json(geoJSON=True, **kwargs)
-    
-    def update(self):
-        """ Update the Table object and preserve custom attributes """
-        new = self.__class__(self.path)
-        
-        # Preserve a custom OIDField
-        if self.OIDField != new.OIDField and self.validate_oid_field(): new.OIDField = self.OIDField    
-        # Preserve a custom query
-        if self.query != new.query: new.query = self.query
-        # Preserve a custom spatial filter
-        if self.spatial_filter and not new.spatial_filter: new.spatial_filter = self.spatial_filter
-        
-        self.__dict__.update(new.__dict__)
-        return
     
 class FeatureClass(Table):
     """ Wrapper for basic FeatureClass operations """    
