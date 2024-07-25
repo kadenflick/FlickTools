@@ -1,12 +1,13 @@
 import arcpy
 import builtins
+from pprint import pformat
 import sys
 import pip
 import os
 import shutil
 import json
 from pathlib import Path
-from typing import Literal, Any
+from typing import Literal, Any, Generator
 from enum import Enum
 
 class controlCLSID(Enum):
@@ -24,21 +25,48 @@ class controlCLSID(Enum):
     HORIZONTAL_VALUE_TABLE = '{1AA9A769-D3F3-4EB0-85CB-CC07C79313C8}'
     SINGLE_VALUE_TABLE = '{1A1CA7EC-A47A-4187-A15C-6EDBA4FE0CF7}'
 
-class Parameters(object):
-    """ Parameters class to store the parameters of a tool """
-    def __init__(self, parameters: list) -> None:
-        self._parameters = parameters
-        for parameter in parameters:
-            self.__dict__[parameter.name] = parameter
+class Parameters(list):
+    """ Parameters class to store the parameters of a tool. Can be used in place of a parameters list """
+      
+    def __init__(self, parameters: list[arcpy.Parameter]) -> None:
+        self.__dict__.update({parameter.name: parameter for parameter in parameters})
         return
     
-    def __iter__(self):
-        for _, value in self._parameters.items():
+    def __iter__(self) -> Generator[arcpy.Parameter, None, None]:
+        for value in self.__dict__.values():
             yield value
         return
     
-    def __getitem__(self, key):
+    def __len__(self) -> int:
+        return len(self.__dict__)
+    
+    def __getitem__(self, key) -> arcpy.Parameter:
+        if isinstance(key, int):
+            return list(self)[key]
         return self.__dict__[key]
+    
+    def __setitem__(self, key, value) -> None:
+        if isinstance(key, int):
+            self.__dict__[list(self.__dict__)[key]] = value
+        self.__dict__[key] = value
+        return
+    
+    def __getattr__(self, name: str) -> arcpy.Parameter:
+        if name in self.__dict__:
+            return self.__dict__[name]
+        return super().__getattribute__(name)
+    
+    def append(self, parameter: arcpy.Parameter) -> None:
+        if not isinstance(parameter, arcpy.Parameter):
+            raise TypeError(f"Parameter must be of type arcpy.Parameter, not {type(parameter)}")
+        self.__dict__[parameter.name] = parameter
+    
+    def extend(self, parameters: list[arcpy.Parameter]) -> None:
+        for parameter in parameters:
+            self.append(parameter)
+    
+    def __repr__(self) -> str:
+        return str(list(self.__dict__.values()))
     
 def sanitize_filename(filename: str) -> str:
     """ Sanitize a filename """
@@ -53,7 +81,7 @@ def print(*values: object,
     """ Print a message to the ArcGIS Pro message queue and stdout
     set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
     """
-        
+
     # Print the message to stdout
     builtins.print(*values, sep=sep, end=end, file=file, flush=flush)
     
