@@ -10,7 +10,7 @@ These tools are motivated somewhat by laziness, but also by the fact that Pro do
 # Usage
 To use a toolbox:
 
-1. Add a .pyt to ArcGIS Pro by navigating to one of the toolbox folders to the toolboxes directory.
+1. Add a .pyt to ArcGIS Pro by navigating to one of the toolbox folders in the toolboxes directory.
 2. Run a tool like any other ArcGIS Pro geoprocessing tool.
 
 # Contact
