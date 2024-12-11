@@ -14,10 +14,10 @@ To use a toolbox:
 2. Run a tool like any other ArcGIS Pro geoprocessing tool.
 
 # Contact
-Feel free to contact me at <kadenflick@gmail.com> with any comments, questions, suggestions, or if things start breaking on you. This GitHub repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
+Feel free to contact me at <kadenflick@gmail.com> with any comments, questions, suggestions, or if things start breaking on you. The GitHub repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
 
 ---<br>
 Version: *v2024121*<br>
 These tools have only been tested for use with ArcGIS Pro 3.3
 
-This project is based on the pytframe2 framework developed by Hayden Welch and can be found on GitHub [here](https://github.com/hwelch-fle/pytframe2).
+This project is based on the [pytframe2](https://github.com/hwelch-fle/pytframe2) framework developed by Hayden Welch.
