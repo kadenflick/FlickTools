@@ -1,5 +1,4 @@
 import arcpy
-import builtins
 from pprint import pformat
 import sys
 import pip
@@ -87,7 +86,7 @@ def sanitize_filename(filename: str) -> str:
     """ Sanitize a filename """
     return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
 
-def print(*values: object,
+def arcprint(*values: object,
           sep: str = " ",
           end: str = "\n",
           file = None,
@@ -98,7 +97,7 @@ def print(*values: object,
     """
 
     # Print the message to stdout
-    builtins.print(*values, sep=sep, end=end, file=file, flush=flush)
+    print(*values, sep=sep, end=end, file=file, flush=flush)
     
     end = "" if end == '\n' else end
     message = f"{sep.join(map(str, values))}{end}"
@@ -111,18 +110,3 @@ def print(*values: object,
         case _:
             arcpy.AddMessage(f"{message}")
     return
-
-def flip_polyline(polyline: arcpy.Polyline) -> arcpy.Polyline:
-    """ Flip a polyline """
-    if not polyline.isMultipart:
-        return arcpy.Polyline(arcpy.Array(reversed(polyline.getPart(0))), polyline.spatialReference)
-    flipped_parts = \
-        [
-            flip_polyline(
-                arcpy.Polyline(part, polyline.spatialReference)) 
-            for part in polyline
-        ]
-    line = flipped_parts[0]
-    for part in flipped_parts[1:]:
-        line = line.union(part)
-    return line
