@@ -1,1 +1,3 @@
-[[FLickTools]](../README.md)
+[[FlickTools]](../README.md)
+
+# FT Config Toolbox

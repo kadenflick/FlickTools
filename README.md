@@ -5,17 +5,19 @@ FlickTools is another ***very*** cleverly named collection of toolboxes that con
 - **[FT Fire Toolbox:](docs/ft_everyday_toolbox.md)** Tools to make the life of a GISS mapping fire a little easier.
 - **[FT Config Toolbox:](docs/ft_everyday_toolbox.md)** Don't like mucking about in JSON to set configs? Here you go.
 
-## Usage
+These tools are motivated somewhat by laziness, but also by the fact that Pro doesn't always do what you want it to do.
+
+# Usage
 To use a toolbox:
 
 1. Add a .pyt to ArcGIS Pro by navigating to one of the toolbox folders to the toolboxes directory.
 2. Run a tool like any other ArcGIS Pro geoprocessing tool.
 
-## Contact
-Feel free to contact me at <kadenflick@gmail.com> with any comments, questions, suggestions, or if things start breaking on you. This Github repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
+# Contact
+Feel free to contact me at <kadenflick@gmail.com> with any comments, questions, suggestions, or if things start breaking on you. This GitHub repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
 
 ---<br>
 Version: *v2024121*<br>
 These tools have only been tested for use with ArcGIS Pro 3.3
 
-Framework and directory structure were developed by Hayden Welch and can be found on GitHub [here](https://github.com/hwelch-fle/pytframe2).
+This project is based on the pytframe2 framework developed by Hayden Welch and can be found on GitHub [here](https://github.com/hwelch-fle/pytframe2).
