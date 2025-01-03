@@ -28,9 +28,35 @@ class Tool(ABC):
         self.databases = self.project.databases
         return
     
-    def getParameterInfo(self) -> list[arcpy.Parameter]: ...
-    def isLicensed(self) -> bool: return True
-    def updateParameters(self, parameters: list[arcpy.Parameter]) -> None: ...
-    def updateMessages(self, parameters: list[arcpy.Parameter]) -> None: ...
-    def execute(self, parameters: list[arcpy.Parameter], messages:list[Any]) -> None: ...
-    def postExecute(self, parameters: list[arcpy.Parameter]) -> None: ...
+    def getParameterInfo(self) -> list[arcpy.Parameter]:
+        """ Define the tool parameters. """
+        return []
+    
+    def isLicensed(self) -> bool:
+        """ Set whether the tool is licensed to execute. """
+        return True
+    
+    def updateParameters(self, parameters: list[arcpy.Parameter]) -> None:
+        """ 
+        Modify the values and properties of parameters before internal 
+        validation is performed.
+        """
+        return
+
+    def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
+        """
+        Modify the messages created by internal validation for each tool
+        parameter.
+        """
+        return
+
+    def execute(self, parameters: list[arcpy.Parameter], messages:list[Any]) -> None:
+        """ The source code of the tool. """
+        return
+
+    def postExecute(self, parameters: list[arcpy.Parameter]) -> None:
+        """
+        This method takes place after outputs are processed and
+        added to the display.
+        """
+        return

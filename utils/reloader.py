@@ -7,8 +7,8 @@ def placeholder_tool(tool_name: str, exception: Exception, traceback: str) -> ty
     class _BrokenImport(Tool):
         __name__ = f"{tool_name}_BrokenImport"
         def __init__(self):
-            self.category = "Broken Tools (Read Description for More Info)"
-            self.label = f"{tool_name} - {exception}"
+            self.category = "Broken Tools"
+            self.label = f"{tool_name}  |  See Tool Properties for Traceback"
             self.alias = self.label.replace(" ", "")
             self.description = traceback
     return _BrokenImport
@@ -25,13 +25,13 @@ def get_module(module_name: str) -> type[Tool]:
         return placeholder_tool(tool, e, format_exc(limit=1))
 
 def import_tools(tool_dict: dict[str, list[str]], tool_module_name: str = "tools") -> list[type[Tool]]:
-    """ Import all tools from the provided dictionary.
+    """ 
+    Import all tools from the provided dictionary.
     Default base module name is "tools".
     Expected format: {"module": ["tool1", "tool2", ...], ...}
     """
-    return \
-        [
-            get_module(f'{tool_module_name}.{tool_sub_module}.{tool}')
-            for tool_sub_module, tools in tool_dict.items()
-            for tool in tools
-        ]
+    return [
+        get_module(f'{tool_module_name}.{tool_sub_module}.{tool}')
+        for tool_sub_module, tools in tool_dict.items()
+        for tool in tools
+    ]

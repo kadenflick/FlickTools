@@ -1,3 +1,3 @@
-[[FlickTools]](../README.md)
+[[FlickTools](../README.md)]
 
 # FT Everyday Toolbox

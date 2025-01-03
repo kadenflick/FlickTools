@@ -1,17 +1,15 @@
 import arcpy
-from pprint import pformat
-import sys
-import pip
 import os
-import shutil
 import json
+
 from pathlib import Path
 from typing import Literal, Any, Generator
 from enum import Enum
 
 class controlCLSID(Enum):
-    """ See [Parameter Controls](https://pro.arcgis.com/en/pro-app/latest/arcpy/geoprocessing_and_python/parameter-controls.htm)
-        documentation for more information on parameter controls.
+    """
+    See [Parameter Controls](https://pro.arcgis.com/en/pro-app/latest/arcpy/geoprocessing_and_python/parameter-controls.htm)
+    documentation for more information on parameter controls.
     """
     EXCLUDE_INTERSECT_AND_UNION = '{15F0D1C1-F783-49BC-8D16-619B8E92F668}'
     SLIDER_RANGE = '{C8C46E43-3D27-4485-9B38-A49F3AC588D9}'
@@ -25,23 +23,23 @@ class controlCLSID(Enum):
     SINGLE_VALUE_TABLE = '{1A1CA7EC-A47A-4187-A15C-6EDBA4FE0CF7}'
 
 class Parameters(list):
-    """ Parameters class that replaces the list of parameters in the tool functions
-        with an object that can be access the parameters by name, index, or attribute.
-    
-        USAGE
-            You still need tool functions to return a list of parameters as the parameters list
-            is rebuilt each time it is passed beteween the tool functions. That list can be immediately
-            converted to a Parameters object at the beginning of the function.
-        >>> def execute(self, parameters: list[arcpy.Parameter]) -> None:
-        >>>     parameters = Parameters(parameters)
-        >>>     paramA = parameters.paramA.value
-        or
-        >>>     paramA = parameters['paramA'].value
-        or
-        >>>     paramA = parameters[0].value
-        Assuming that paramA is the first parameter in the list of parameters
+    """ 
+    Parameters class that replaces the list of parameters in the tool functions
+    with an object that can be access the parameters by name, index, or attribute.
+
+    USAGE
+        You still need tool functions to return a list of parameters as the parameters list
+        is rebuilt each time it is passed beteween the tool functions. That list can be immediately
+        converted to a Parameters object at the beginning of the function.
+    >>> def execute(self, parameters: list[arcpy.Parameter]) -> None:
+    >>>     parameters = Parameters(parameters)
+    >>>     paramA = parameters.paramA.value
+    or
+    >>>     paramA = parameters['paramA'].value
+    or
+    >>>     paramA = parameters[0].value
+    Assuming that paramA is the first parameter in the list of parameters
     """
-      
     def __init__(self, parameters: list[arcpy.Parameter]) -> None:
         self.__dict__.update({parameter.name: parameter for parameter in parameters})
         return
@@ -81,9 +79,35 @@ class Parameters(list):
     
     def __repr__(self) -> str:
         return str(list(self.__dict__.values()))
+
+class ToolboxConfig():
+    """
+    Loads a toolbox config file and creates an objeect for accessing the config values. Input is
+    the full path to the config file.
+    """
+    def __init__(self, config_path: os.PathLike) -> None:
+        self.config_path = config_path
+        self.config_values = self._load_config(config_path)
+        return
+    
+    def _load_config(self, path) -> dict:
+        """ Attempt to decode json file. """
+        try:
+            return json.load(open(path))
+        except FileNotFoundError:
+            return None
+    
+    def value(self, index: str) -> str:
+        """ Return the config value at the given index. """        
+        if(self.config_values and index in self.config_values.keys()):
+            return self.config_values[index]["value"]
+        return None
+    
+    def asParameters(self) -> list[arcpy.Parameter]:
+        return
     
 def sanitize_filename(filename: str) -> str:
-    """ Sanitize a filename """
+    """ Sanitize a filename. """
     return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
 
 def arcprint(*values: object,
@@ -92,10 +116,10 @@ def arcprint(*values: object,
           file = None,
           flush: bool = False,
           severity: Literal['INFO', 'WARNING', 'ERROR'] = None):
-    """ Print a message to the ArcGIS Pro message queue and stdout
+    """
+    Print a message to the ArcGIS Pro message queue and stdout
     set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
     """
-
     # Print the message to stdout
     print(*values, sep=sep, end=end, file=file, flush=flush)
     
@@ -110,3 +134,19 @@ def arcprint(*values: object,
         case _:
             arcpy.AddMessage(f"{message}")
     return
+
+def load_fieldmap(path: os.PathLike) -> arcpy.FieldMappings:
+    """
+    Create a Field Mappings object from a .fieldmap file.
+    """
+    with open(path, 'r') as fieldmap:
+        return arcpy.FieldMappings().loadFromString(fieldmap.read())
+    
+def toolbox_abspath(path: os.PathLike) -> os.PathLike:
+    """
+    Get absolute path for file within toolbox.
+
+    The path parameter is the relative path to a file within the top-level
+    toolbox folder.
+    """
+    return os.path.join(Path(__file__).parents[1].absolute(), path)
