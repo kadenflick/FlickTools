@@ -44,10 +44,7 @@ class Tool(ABC):
         return
 
     def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
-        """
-        Modify the messages created by internal validation for each tool
-        parameter.
-        """
+        """ Modify the messages created by internal validation for each tool parameter. """
         return
 
     def execute(self, parameters: list[arcpy.Parameter], messages:list[Any]) -> None:
