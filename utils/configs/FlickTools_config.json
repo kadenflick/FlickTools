@@ -1,0 +1,16 @@
+{
+    "default_state": {
+        "alias": "Default State"
+        , "type": "GPString"
+        , "category": null
+        , "value": "Oregon"
+        , "list": []
+    },
+    "default_huc_level": {
+        "alias": "Default HUC Level"
+        , "type": "GPString"
+        , "category": null
+        , "value": "HUC8"
+        , "list": ["HUC2", "HUC4", "HUC6", "HUC8", "HUC10", "HUC12", "HUC14", "HUC16"]
+    }
+}

@@ -1,8 +1,0 @@
-{
-    "default_state": {
-        "alias": "Default State"
-        , "type": "GPString"
-        , "category": null
-        , "value": "Oregon"
-    }
-}

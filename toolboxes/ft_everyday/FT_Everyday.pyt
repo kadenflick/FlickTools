@@ -34,6 +34,8 @@ from utils.tool import Tool
 TOOLS = {
     "map": [
         "ZoomToCounty_map"
+        , "ZoomToHUC_map"
+        , "ZoomToTRS_map"
     ]
 }
 
