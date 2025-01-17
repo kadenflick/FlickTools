@@ -4,8 +4,8 @@ import requests
 from typing import Any
 
 from utils.tool import Tool
+from utils.utilities import States
 import utils.archelp as archelp
-import utils.constants as constants
 
 class ZoomToHUC_map(Tool):
     def __init__(self) -> None:
@@ -36,7 +36,7 @@ class ZoomToHUC_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = constants.STATE_NAMES
+        state.filter.list = utilities.STATE_NAMES
         state.value = self.config.value("default_state")
         
         huc_level = arcpy.Parameter(
@@ -75,7 +75,7 @@ class ZoomToHUC_map(Tool):
             try:
                 # Get all HUCs in current state from USGS REST 
                 layer = self.huc_layers[parameters.huc_level.valueAsText]
-                state = constants.STATES[parameters.state.valueAsText]
+                state = utilities.STATES[parameters.state.valueAsText]
                 huc_level = parameters.huc_level.valueAsText.lower()
                 base_url = f"{self.partial_service_URL}{layer}/query"
                 query = {

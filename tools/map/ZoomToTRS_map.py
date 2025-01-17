@@ -1,10 +1,9 @@
 import arcpy
-
 from typing import Any
 
-from utils.tool import Tool
 import utils.archelp as archelp
-import utils.constants as constants
+from utils.tool import Tool
+from utils.utilities import States
 
 class ZoomToTRS_map(Tool):
     def __init__(self) -> None:
@@ -30,7 +29,7 @@ class ZoomToTRS_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = constants.STATE_NAMES
+        state.filter.list = States.STATE_NAMES
         state.value = self.config.value("default_state")
 
         township = arcpy.Parameter(

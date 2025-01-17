@@ -4,9 +4,8 @@ import requests
 from typing import Any
 
 import utils.archelp as archelp
-import utils.constants as constants
+from utils.utilities import States
 from utils.tool import Tool
-
 
 class ZoomToCounty_map(Tool):
     def __init__(self) -> None:
@@ -34,7 +33,7 @@ class ZoomToCounty_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = constants.STATE_NAMES
+        state.filter.list = utilities.STATE_NAMES
         state.value = self.config.value("default_state")
 
         county = arcpy.Parameter(
@@ -60,7 +59,7 @@ class ZoomToCounty_map(Tool):
         if parameters.state.altered and not parameters.state.hasBeenValidated:
             try:
                 query = {
-                    "where": f"STATE_ABBR = '{constants.STATES[parameters.state.valueAsText]}'",
+                    "where": f"STATE_ABBR = '{utilities.STATES[parameters.state.valueAsText]}'",
                     "returnGeometry": "false",
                     "outFields": "NAME",
                     "f": "pjson"
@@ -107,7 +106,7 @@ class ZoomToCounty_map(Tool):
         if current_view is not None:
             # Get extent of specified county from service
             # Need some error handling here
-            state = constants.STATES[parameters.state.valueAsText]
+            state = utilities.STATES[parameters.state.valueAsText]
             county = parameters.county.valueAsText
             query = {
                 "where": f"STATE_ABBR = '{state}' AND NAME LIKE '{county}%'",
