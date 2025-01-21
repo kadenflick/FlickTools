@@ -14,7 +14,7 @@ Tools are categorized by theme and organized into toolboxes. Each toolbox aggreg
 
 **Using a Toolbox with ArcGIS Pro**
 
-1. Add a .pyt to ArcGIS Pro by navigating to one of the toolbox folders in the toolboxes directory.
+1. Add a .pyt to ArcGIS Pro by navigating to one of the toolbox folders in the `toolboxes` directory.
 1. Expand a tool category within the toolbox and open a tool. The tool will open in the geoprocessing pane.
 1. Set tool parameters and click the "Run" button.
 
@@ -22,8 +22,8 @@ Tools are categorized by theme and organized into toolboxes. Each toolbox aggreg
 
 **Editing Default Tool Values**
 
-1. Add the FT Config toolbox to an ArcGIS Pro project.
-1. Open the "Edit Tool Defaults" tool.
+1. Add the [FT Config](docs/FT_Config_Toolbox.md) toolbox to an ArcGIS Pro project.
+1. Open the *Edit Tool Defaults* tool.
 1. Change the tool parameters, then click the "Run" button.
 
 
