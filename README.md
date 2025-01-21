@@ -17,6 +17,8 @@ Each toolbox contains tools that are useful in different scenarios, though some 
 1. Download the `.zip` file for the last version of FlickTools from the **Releases** section of the GitHub repository.
 1. Unpack the `.zip` file to an appropriate location on your computer.
 
+<br>
+
 **Using a Toolbox with ArcGIS Pro**
 
 1. Open the **Add Toolbox** dialog box in an ArcGIS Pro project.
@@ -24,6 +26,8 @@ Each toolbox contains tools that are useful in different scenarios, though some 
 1. Expand the toolbox in the **Geoprocessing** or **Catalog** panes.
 1. Expand a tool category within the toolbox and open a tool. The tool will open in the geoprocessing pane.
 1. Set tool parameters and click the **Run** button.
+
+<br>
 
 **Editing Default Tool Values**
 
