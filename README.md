@@ -4,7 +4,7 @@ FlickTools is ***another*** very cleverly named collection of tools and toolboxe
 
 ## Toolboxes
 
-Tools are categorized by theme and organized into toolboxes. Each toolbox aggregates tools that are useful in different scenarios. Tools can be present in multiple toolboxes. For a full list of all tools, see the [Tool List](docs/FT_Tool_List.md).
+Each toolbox contains tools that are useful in different scenarios, though some tools are present in multiple toolboxes. Within each toolbox, tools are categorized and grouped by theme. For a full list of all tools, see the **[Tool List](docs/FT_Tool_List.md)**.
 
 - **[FT Everyday Toolbox:](docs/ft_everyday_toolbox.md)** Your everyday toolbox. It contains tools that you might use everyday.
 - **[FT Fire Toolbox:](docs/ft_everyday_toolbox.md)** Tools to make the life of a GISS mapping fire with the NIFS a little easier.
