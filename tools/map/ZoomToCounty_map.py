@@ -33,8 +33,22 @@ class ZoomToCounty_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = constants.STATE_NAMES
         state.value = self.ft_config.value("default_state")
+
+        # Try to get list of states from feature service
+        try:
+            query = {
+                "where": "1=1",
+                "returnGeometry": "false",
+                "outFields": "STATE_NAME",
+                "returnDistinctValues": "true",
+                "f": "pjson"
+            }
+            resp = requests.get(self.service_URL, query).json()
+            state.filter.list = [i['attributes']['STATE_NAME'] for i in resp['features']]
+        # Catch the same errors here that we do in update messages 
+        except:
+            pass
 
         county = arcpy.Parameter(
             displayName = "County",
@@ -55,17 +69,18 @@ class ZoomToCounty_map(Tool):
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
-        # Get list of counties from service
+        # Update list of counties from service
         if parameters.state.altered and not parameters.state.hasBeenValidated:
             try:
                 query = {
-                    "where": f"STATE_ABBR = '{constants.STATE_ABBR(parameters.state.valueAsText)}'",
+                    "where": f"STATE_NAME = '{parameters.state.valueAsText}'",
                     "returnGeometry": "false",
                     "outFields": "NAME",
                     "f": "pjson"
                 }
                 resp = requests.get(self.service_URL, query).json()
                 parameters.county.filter.list = sorted([i['attributes']['NAME'] for i in resp['features']])
+                parameters.county.value = None
             # Catch the same errors here that we do in update messages
             except:
                 pass
@@ -78,7 +93,8 @@ class ZoomToCounty_map(Tool):
         parameters = archelp.Parameters(parameters)
 
         # See if we can hit the service with a barebones query
-        if parameters.state.altered and not parameters.state.hasBeenValidated:
+        if (parameters.state.altered and not parameters.state.hasBeenValidated) \
+           or (parameters.county.altered and not parameters.county.hasBeenValidated):
             try:
                 query = {
                     "where": "1=1",
@@ -106,10 +122,8 @@ class ZoomToCounty_map(Tool):
         if current_view is not None:
             # Get extent of specified county from service
             # Need some error handling here
-            state = constants.STATE_ABBR(parameters.state.valueAsText)
-            county = parameters.county.valueAsText
             query = {
-                "where": f"STATE_ABBR = '{state}' AND NAME LIKE '{county}%'",
+                "where": f"STATE_NAME = '{parameters.state.valueAsText}' AND NAME = '{parameters.county.valueAsText}'",
                 "returnExtentOnly": "true",
                 "outSR": f"{current_view.map.spatialReference.factoryCode}",
                 "f": "pjson"

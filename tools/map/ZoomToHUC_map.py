@@ -103,7 +103,7 @@ class ZoomToHUC_map(Tool):
         # See if we can hit the service with a barebones query
         # Need to do this here because internal validation overwrites errors set in updateParameters
         if (parameters.state.altered and not parameters.state.hasBeenValidated) \
-            or (parameters.huc_level.altered and not parameters.huc_level.hasBeenValidated):
+           or (parameters.huc_level.altered and not parameters.huc_level.hasBeenValidated):
             try:
                 layer = self.huc_layers[parameters.huc_level.valueAsText]
                 base_url = f"{self.partial_service_URL}{layer}/query"
