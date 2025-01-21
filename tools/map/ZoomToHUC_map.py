@@ -3,9 +3,9 @@ import requests
 
 from typing import Any
 
-from utils.tool import Tool
-from utils.utilities import States
 import utils.archelp as archelp
+import utils.constants as constants
+from utils.tool import Tool
 
 class ZoomToHUC_map(Tool):
     def __init__(self) -> None:
@@ -18,7 +18,6 @@ class ZoomToHUC_map(Tool):
         self.alias = "ZoomToHUC_map"
         self.description = "Zooms the map to a specific HUC in the US."
         self.category = "Navigation"
-        self.config = archelp.ToolboxConfig(archelp.toolbox_abspath(r"utils\configs\FlickTools_config.json"))
         self.partial_service_URL = "https://hydrowfs.nationalmap.gov/arcgis/rest/services/wbd/MapServer/"
 
         # USGS feature layer numbers for each HUC layer
@@ -36,8 +35,8 @@ class ZoomToHUC_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = utilities.STATE_NAMES
-        state.value = self.config.value("default_state")
+        state.filter.list = constants.STATE_NAMES
+        state.value = self.ft_config.value("default_state")
         
         huc_level = arcpy.Parameter(
             displayName = "Level",
@@ -48,7 +47,7 @@ class ZoomToHUC_map(Tool):
         )
         huc_level.filter.type = "ValueList"
         huc_level.filter.list = list(self.huc_layers.keys())
-        huc_level.value = self.config.value("default_huc_level")
+        huc_level.value = self.ft_config.value("default_huc_level")
         
         huc = arcpy.Parameter(
             displayName = "Watershed",
@@ -75,7 +74,7 @@ class ZoomToHUC_map(Tool):
             try:
                 # Get all HUCs in current state from USGS REST 
                 layer = self.huc_layers[parameters.huc_level.valueAsText]
-                state = utilities.STATES[parameters.state.valueAsText]
+                state = constants.STATE_ABBR(parameters.state.valueAsText)
                 huc_level = parameters.huc_level.valueAsText.lower()
                 base_url = f"{self.partial_service_URL}{layer}/query"
                 query = {

@@ -1,9 +1,10 @@
 import arcpy
+
 from typing import Any
 
 import utils.archelp as archelp
+import utils.constants as constants
 from utils.tool import Tool
-from utils.utilities import States
 
 class ZoomToTRS_map(Tool):
     def __init__(self) -> None:
@@ -16,7 +17,7 @@ class ZoomToTRS_map(Tool):
         self.alias = "ZoomToTRS_map"
         self.description = "Zooms the map to a specific Township, Section, and Range."
         self.category = "Navigation"
-        self.config = archelp.ToolboxConfig(archelp.toolbox_abspath(r"utils\configs\FlickTools_config.json"))
+
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
@@ -29,8 +30,8 @@ class ZoomToTRS_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = States.STATE_NAMES
-        state.value = self.config.value("default_state")
+        state.filter.list = constants.STATE_NAMES
+        state.value = self.ft_config.value("default_state")
 
         township = arcpy.Parameter(
             displayName = "Township",

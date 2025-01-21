@@ -4,7 +4,7 @@ import requests
 from typing import Any
 
 import utils.archelp as archelp
-from utils.utilities import States
+import utils.constants as constants
 from utils.tool import Tool
 
 class ZoomToCounty_map(Tool):
@@ -18,8 +18,8 @@ class ZoomToCounty_map(Tool):
         self.alias = "ZoomToCounty_map"
         self.description = "Zooms the current map view to the extent of a specific county in the US."
         self.category = "Navigation"
-        self.config = archelp.ToolboxConfig(archelp.toolbox_abspath(r"utils\configs\FlickTools_config.json"))
         self.service_URL = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Census_Counties/FeatureServer/0/query"
+
         return
 
     def getParameterInfo(self) -> list[arcpy.Parameter]:
@@ -33,8 +33,8 @@ class ZoomToCounty_map(Tool):
             direction = "Input"
         )
         state.filter.type = "ValueList"
-        state.filter.list = utilities.STATE_NAMES
-        state.value = self.config.value("default_state")
+        state.filter.list = constants.STATE_NAMES
+        state.value = self.ft_config.value("default_state")
 
         county = arcpy.Parameter(
             displayName = "County",
@@ -59,7 +59,7 @@ class ZoomToCounty_map(Tool):
         if parameters.state.altered and not parameters.state.hasBeenValidated:
             try:
                 query = {
-                    "where": f"STATE_ABBR = '{utilities.STATES[parameters.state.valueAsText]}'",
+                    "where": f"STATE_ABBR = '{constants.STATE_ABBR(parameters.state.valueAsText)}'",
                     "returnGeometry": "false",
                     "outFields": "NAME",
                     "f": "pjson"
@@ -106,7 +106,7 @@ class ZoomToCounty_map(Tool):
         if current_view is not None:
             # Get extent of specified county from service
             # Need some error handling here
-            state = utilities.STATES[parameters.state.valueAsText]
+            state = constants.STATE_ABBR(parameters.state.valueAsText)
             county = parameters.county.valueAsText
             query = {
                 "where": f"STATE_ABBR = '{state}' AND NAME LIKE '{county}%'",

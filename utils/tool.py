@@ -4,6 +4,8 @@ import os
 from typing import Any
 from abc import ABC
 
+import utils.archelp as archelp
+
 class Tool(ABC):
     """
     Base class for all tools that use python objects to build parameters
@@ -17,6 +19,7 @@ class Tool(ABC):
         self.description = "Base class for all tools"
         self.canRunInBackground = False
         self.category = "Unassigned"
+        self.ft_config = archelp.ToolboxConfig(archelp.toolbox_abspath(r"utils\configs\FlickTools_config.json"))
         
         # Project variables
         self.project = arcpy.mp.ArcGISProject("CURRENT")
