@@ -12,6 +12,13 @@ Each toolbox contains tools that are useful in different scenarios, though some 
 
 ## Setup and Use
 
+**Downloading the Latest Version of FlickTools**
+
+1. Download the `.zip` file for the last version of FlickTools from the **Releases** section of the GitHub repository.
+1. Unpack the `.zip` file to an appropriate location on your computer.
+
+<br>
+
 **Using a Toolbox with ArcGIS Pro**
 
 1. Open the **Add Toolbox** dialog box in an ArcGIS Pro project.
