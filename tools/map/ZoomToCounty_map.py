@@ -9,7 +9,8 @@ from utils.tool import Tool
 
 class ZoomToCounty_map(Tool):
     def __init__(self) -> None:
-        """ Zooms the current map view to the extent of a specific county in the US. """
+        """Zooms the current map view to the extent of a specific county in the US."""
+
         # Initialize base class parameters
         super().__init__()
 
@@ -23,7 +24,8 @@ class ZoomToCounty_map(Tool):
         return
 
     def getParameterInfo(self) -> list[arcpy.Parameter]:
-        """ Define the tool parameters. """
+        """Define the tool parameters."""
+
         # Define parameters
         state = arcpy.Parameter(
             displayName = "State",
@@ -66,6 +68,7 @@ class ZoomToCounty_map(Tool):
         Modify the values and properties of parameters before internal 
         validation is performed.
         """
+
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
@@ -88,7 +91,11 @@ class ZoomToCounty_map(Tool):
         return
     
     def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
-        """ Modify the messages created by internal validation for each tool parameter. """
+        """
+        Modify the messages created by internal validation for each tool
+        parameter.
+        """
+        
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
@@ -113,7 +120,7 @@ class ZoomToCounty_map(Tool):
         return
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
-        """ The source code of the tool. """
+        """The source code of the tool."""
         # Load parameters and define current view
         parameters = archelp.Parameters(parameters)
         current_view = self.project.activeView
@@ -136,9 +143,11 @@ class ZoomToCounty_map(Tool):
             
             # Set the map extent using the extent recieved from the REST request if it is valid.
             if "NaN" not in ext_list:
-                ext = arcpy.Extent(XMin = resp['extent']['xmin'], YMin = resp['extent']['ymin'], 
-                                   XMax = resp['extent']['xmax'], YMax = resp['extent']['ymax'], 
-                                   spatial_reference = arcpy.SpatialReference(resp['extent']['spatialReference']['latestWkid']))
+                ext = arcpy.Extent(
+                    XMin = resp['extent']['xmin'], YMin = resp['extent']['ymin'], 
+                    XMax = resp['extent']['xmax'], YMax = resp['extent']['ymax'], 
+                    spatial_reference = arcpy.SpatialReference(resp['extent']['spatialReference']['latestWkid'])
+                )
                 current_view.camera.setExtent(ext)
             else:
                 archelp.arcprint("Error: Invalid extent. Check tool parameters.", severity="ERROR")

@@ -4,7 +4,7 @@
 TAB: str = "     "
 
 def TABS(self, number: int) -> str:
-    """ Return a specified number of TABs. """
+    """Return a specified number of TABs."""
     return self.TAB * number
 
 # Constants for working with US state names and abbreviations
@@ -21,14 +21,17 @@ STATE_ABBRS: list[str] = sorted(list(STATES.keys()))
 STATE_NAMES: list[str] = sorted(list(STATES.values()))
 
 def STATE_ABBR(name: str) -> str:
-    """ Return state name given abbreviation if it exists, otherwise return abbreviation. """
+    """
+    Return state name given abbreviation if it exists, otherwise return
+    abbreviation.
+    """
     if name in STATES.values():
         return list(STATES.keys())[list(STATES.values()).index(name)]
     else:
         return name
 
 def STATE_NAME(abbr: str) -> str:
-    """ Return state abbreviation given name if it exists, otherwise return name. """
+    """Return state abbreviation given name if it exists, otherwise return name."""
     if abbr in STATES.keys():
         return STATES[abbr]
     else:

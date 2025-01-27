@@ -7,13 +7,11 @@ from abc import ABC
 import utils.archelp as archelp
 
 class Tool(ABC):
-    """
-    Base class for all tools that use python objects to build parameters
-    """
+    """Base class for all tools."""
+    
     def __init__(self) -> None:
-        """
-        Tool Description
-        """
+        """Base tool."""
+
         # Tool parameters
         self.label = "Tool"
         self.description = "Base class for all tools"
@@ -32,11 +30,11 @@ class Tool(ABC):
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
-        """ Define the tool parameters. """
+        """Define the tool parameters."""
         return []
     
     def isLicensed(self) -> bool:
-        """ Set whether the tool is licensed to execute. """
+        """Set whether the tool is licensed to execute."""
         return True
     
     def updateParameters(self, parameters: list[arcpy.Parameter]) -> None:
@@ -47,11 +45,14 @@ class Tool(ABC):
         return
 
     def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
-        """ Modify the messages created by internal validation for each tool parameter. """
+        """
+        Modify the messages created by internal validation for each tool
+        parameter.
+        """
         return
 
     def execute(self, parameters: list[arcpy.Parameter], messages:list[Any]) -> None:
-        """ The source code of the tool. """
+        """The source code of the tool."""
         return
 
     def postExecute(self, parameters: list[arcpy.Parameter]) -> None:

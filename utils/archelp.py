@@ -24,21 +24,14 @@ class controlCLSID(Enum):
 
 class Parameters(list):
     """ 
-    Parameters class that replaces the list of parameters in the tool functions
-    with an object that can be access the parameters by name, index, or attribute.
+    Parameters class that replaces the list of parameters in the tool
+    functions with an object that can be access the parameters by name,
+    index, or attribute.
 
-    USAGE
-        You still need tool functions to return a list of parameters as the parameters list
-        is rebuilt each time it is passed beteween the tool functions. That list can be immediately
-        converted to a Parameters object at the beginning of the function.
-    >>> def execute(self, parameters: list[arcpy.Parameter]) -> None:
-    >>>     parameters = Parameters(parameters)
-    >>>     paramA = parameters.paramA.value
-    or
-    >>>     paramA = parameters['paramA'].value
-    or
-    >>>     paramA = parameters[0].value
-    Assuming that paramA is the first parameter in the list of parameters
+    You still need tool functions to return a list of parameters as the
+    parameters list is rebuilt each time it is passed beteween the tool
+    functions. That list can be immediately converted to a Parameters object
+    at the beginning of the function.
     """
     def __init__(self, parameters: list[arcpy.Parameter]) -> None:
         self.__dict__.update({parameter.name: parameter for parameter in parameters})
@@ -82,9 +75,10 @@ class Parameters(list):
 
 class ToolboxConfig():
     """
-    Loads a toolbox config file and creates an objeect for accessing the config values. Input is
-    the full path to the config file.
+    Loads a toolbox config file and creates an objeect for accessing the
+    config values. Input is the full path to the config file.
     """
+
     def __init__(self, config_path: os.PathLike) -> None:
         self.config_path = config_path
         self.config_values = self._load_config(config_path)
@@ -107,19 +101,22 @@ class ToolboxConfig():
         return
     
 def sanitize_filename(filename: str) -> str:
-    """ Sanitize a filename. """
+    """Sanitize a filename."""
+
     return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
 
 def arcprint(*values: object,
-          sep: str = " ",
-          end: str = "\n",
-          file = None,
-          flush: bool = False,
-          severity: Literal['INFO', 'WARNING', 'ERROR'] = None):
+             sep: str = " ",
+             end: str = "\n",
+             file = None,
+             flush: bool = False,
+             severity: Literal['INFO', 'WARNING', 'ERROR'] = None):
     """
-    Print a message to the ArcGIS Pro message queue and stdout
-    set severity to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with the appropriate severity
+    Print a message to the ArcGIS Pro message queue and stdout set severity
+    to 'WARNING' or 'ERROR' to print to the ArcGIS Pro message queue with
+    the appropriate severity
     """
+
     # Print the message to stdout
     print(*values, sep=sep, end=end, file=file, flush=flush)
     
@@ -136,9 +133,8 @@ def arcprint(*values: object,
     return
 
 def load_fieldmap(path: os.PathLike) -> arcpy.FieldMappings:
-    """
-    Create a Field Mappings object from a .fieldmap file.
-    """
+    """Create a Field Mappings object from a .fieldmap file."""
+
     with open(path, 'r') as fieldmap:
         return arcpy.FieldMappings().loadFromString(fieldmap.read())
     
@@ -149,4 +145,5 @@ def toolbox_abspath(path: os.PathLike) -> os.PathLike:
     The path parameter is the relative path to a file within the top-level
     toolbox folder.
     """
+
     return os.path.join(Path(__file__).parents[1].absolute(), path)

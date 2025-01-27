@@ -43,7 +43,7 @@ globals().update({tool.__name__: tool for tool in IMPORTS})
 
 class Toolbox(object):
     def __init__(self):
-        """ Define the toolbox (the name of the toolbox is the name of the .pyt file). """
+        """Define the toolbox."""
         
         self.label = "FT Config"
         self.alias = self.label.replace(" ", "")

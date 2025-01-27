@@ -13,7 +13,7 @@ import utils.archelp as archelp
 class ToolName_category(Tool):
     def __init__(self) -> None:
         """
-        Tool Description
+        Tool Description.
         """
         # Initialize base class parameters
         super().__init__()
@@ -26,11 +26,11 @@ class ToolName_category(Tool):
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
-        """ Define the tool parameters. """
+        """Define the tool parameters."""
         return [] 
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
-        """ The source code of the tool. """
+        """The source code of the tool."""
         return
 ```
 

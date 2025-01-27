@@ -8,7 +8,8 @@ from utils.tool import Tool
 
 class ZoomToTRS_map(Tool):
     def __init__(self) -> None:
-        """ Zooms the map to a specific Township, Section, and Range. """
+        """Zooms the map to a specific Township, Section, and Range."""
+
         # Initialize base class parameters
         super().__init__()
 
@@ -22,6 +23,7 @@ class ZoomToTRS_map(Tool):
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
         """ Define the tool parameters. """
+        
         state = arcpy.Parameter(
             displayName = "State",
             name = "state",
@@ -70,9 +72,12 @@ class ZoomToTRS_map(Tool):
         return
     
     def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
-        """ Modify the messages created by internal validation for each tool parameter. """
+        """
+        Modify the messages created by internal validation for each tool
+        parameter.
+        """
         return
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
-        """ The source code of the tool. """
+        """The source code of the tool."""
         return

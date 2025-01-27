@@ -34,9 +34,9 @@ from utils.tool import Tool
 
 TOOLS = {
     "map": [
-        "ZoomToCounty_map"
-        , "ZoomToHUC_map"
-        , "ZoomToTRS_map"
+        "ZoomToCounty_map",
+        "ZoomToHUC_map",
+        "ZoomToTRS_map"
     ]
 }
 
@@ -47,7 +47,7 @@ globals().update({tool.__name__: tool for tool in IMPORTS})
 
 class Toolbox(object):
     def __init__(self):
-        """ Define the toolbox (the name of the toolbox is the name of the .pyt file). """
+        """Define the toolbox."""
         
         self.label = "FT Everyday"
         self.alias = self.label.replace(" ", "")

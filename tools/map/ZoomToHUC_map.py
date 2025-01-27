@@ -9,7 +9,8 @@ from utils.tool import Tool
 
 class ZoomToHUC_map(Tool):
     def __init__(self) -> None:
-        """ Zooms the map to a specific HUC in the US. """
+        """ Zooms the map to a specific HUC in the US."""
+
         # Initialize base class parameters
         super().__init__()
 
@@ -26,7 +27,8 @@ class ZoomToHUC_map(Tool):
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
-        """ Define the tool parameters. """
+        """Define the tool parameters."""
+
         state = arcpy.Parameter(
             displayName = "State",
             name = "state",
@@ -65,6 +67,7 @@ class ZoomToHUC_map(Tool):
         Modify the values and properties of parameters before internal 
         validation is performed.
         """
+
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
@@ -96,7 +99,11 @@ class ZoomToHUC_map(Tool):
         return
     
     def updateMessages(self, parameters: list[arcpy.Parameter]) -> None:
-        """ Modify the messages created by internal validation for each tool parameter. """
+        """
+        Modify the messages created by internal validation for each tool
+        parameter.
+        """
+
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
@@ -123,7 +130,8 @@ class ZoomToHUC_map(Tool):
         return
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
-        """ The source code of the tool. """
+        """The source code of the tool."""
+        
         # Load parameters and define current view
         parameters = archelp.Parameters(parameters)
         current_view = self.project.activeView
