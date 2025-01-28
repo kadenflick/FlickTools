@@ -47,7 +47,7 @@ class ZoomToCounty_map(Tool):
                 "f": "pjson"
             }
             resp = requests.get(self.service_URL, query).json()
-            state.filter.list = [i['attributes']['STATE_NAME'] for i in resp['features']]
+            state.filter.list = sorted([i['attributes']['STATE_NAME'] for i in resp['features']])
         # Catch the same errors here that we do in update messages 
         except:
             pass
@@ -100,8 +100,8 @@ class ZoomToCounty_map(Tool):
         parameters = archelp.Parameters(parameters)
 
         # See if we can hit the service with a barebones query
-        if (parameters.state.altered and not parameters.state.hasBeenValidated) \
-           or (parameters.county.altered and not parameters.county.hasBeenValidated):
+        if ((parameters.state.altered and not parameters.state.hasBeenValidated)
+            or (parameters.county.altered and not parameters.county.hasBeenValidated)):
             try:
                 query = {
                     "where": "1=1",
