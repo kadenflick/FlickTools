@@ -1,5 +1,6 @@
 import arcpy
 import requests
+import re
 
 from typing import Any
 
@@ -20,7 +21,7 @@ class ZoomToTRS_map(Tool):
         self.description = "Zooms the map to a specific Township, Section, and Range."
         self.category = "Navigation"
         self.township_service_url = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer/1/query"
-        self.section_service_url = ""
+        self.section_service_url = "https://gis.blm.gov/arcgis/rest/services/Cadastral/BLM_Natl_PLSS_CadNSDI/MapServer/2/query"
 
         return
     
@@ -61,15 +62,6 @@ class ZoomToTRS_map(Tool):
         )
         township.filter.type = "ValueList"
 
-        range = arcpy.Parameter(
-            displayName = "Range",
-            name = "range",
-            datatype = "GPString",
-            parameterType = "Required",
-            direction = "Input"
-        )
-        range.filter.type = "ValueList"
-
         section = arcpy.Parameter(
             displayName = "Section",
             name = "section",
@@ -79,7 +71,15 @@ class ZoomToTRS_map(Tool):
         )
         section.filter.type = "ValueList"
 
-        return [state, township, range, section]
+        return [state, township, section]
+
+    def _multiple_replace(self, text: str) -> str:
+        """Replace mutiple characters in a string."""
+
+        # This is basically to clean up Oregon values that include both T and R and have some hyphenated township labels
+        subs = {"T": "", "R": "", "-": ""}
+
+        return "".join([subs[c] if c in subs.keys() else c for c in text])
     
     def updateParameters(self, parameters: list[arcpy.Parameter]) -> None:
         """ 
@@ -87,26 +87,51 @@ class ZoomToTRS_map(Tool):
         validation is performed.
         """
 
-        # Load parameters in a useful format
+        # Load parameters and set useful variables
         parameters = archelp.Parameters(parameters)
+        state_abbr = constants.STATE_ABBR(parameters.state.valueAsText)
 
-        # Update township and range filter lists
+        # Update township filter list
         if parameters.state.altered and not parameters.state.hasBeenValidated:
-            # try:
-            query = {
-                "where": f"STATEABBR = '{constants.STATE_ABBR(parameters.state.valueAsText)}'",
-                "returnGeometry": "false",
-                "outFields": "TWNSHPLAB",
-                "f": "pjson"
-            }
-            resp = requests.get(self.township_service_url, query).json()
-            split_lists = [i['attributes']['TWNSHPLAB'].split() for i in resp['features']]
-
-            parameters.township.filter.list = sorted([i[0].replace("T", "") for i in split_lists])
-            parameters.range.filter.list = sorted([i[1].replace("R", "") for i in split_lists])
+            try:
+                query = {
+                    "where": f"STATEABBR = '{state_abbr}'",
+                    "returnGeometry": "false",
+                    "outFields": "TWNSHPLAB",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.township_service_url, query).json()
+                parameters.township.filter.list = sorted([self._multiple_replace(i['attributes']['TWNSHPLAB']) for i in resp['features']])
             # Catch the same errors here that we do in update messages 
-            # except:
-            #     pass
+            except:
+                pass
+
+        # Update section filter list
+        if parameters.township.altered and not parameters.township.hasBeenValidated:
+            try:
+                # Query township service to get township id
+                split_township = parameters.township.valueAsText.split()
+                query = {
+                    "where": f"STATEABBR = '{state_abbr}' AND TWNSHPLAB LIKE '%{split_township[0]}%{split_township[1]}'",
+                    "returnGeometry": "false",
+                    "outFields": "PLSSID",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.township_service_url, query).json()
+                plss_id = resp["features"][0]["attributes"]["PLSSID"]
+
+                # Query sections service to get list of sections that match township id
+                query = {
+                    "where": f"PLSSID = '{plss_id}'",
+                    "returnGeometry": "false",
+                    "outFields": "FRSTDIVLAB",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.section_service_url, query).json()
+                parameters.section.filter.list = sorted([i["attributes"]["FRSTDIVLAB"] for i in resp["features"]])
+            # Catch the same errors here that we do in update messages 
+            except:
+                pass
 
         return
     
@@ -122,7 +147,7 @@ class ZoomToTRS_map(Tool):
         # See if we can hit the township service with a barebones query
         if ((parameters.state.altered and not parameters.state.hasBeenValidated)
             or (parameters.township.altered and not parameters.township.hasBeenValidated)
-            or (parameters.range.altered and not parameters.range.hasBeenValidated)):
+            or (parameters.section.altered and not parameters.section.hasBeenValidated)):
             try:
                 query = {
                     "where": "1=1",
@@ -131,16 +156,80 @@ class ZoomToTRS_map(Tool):
                     "resultRecordCount": "1",
                     "f": "pjson"
                 }
-                resp = requests.get(self.township_service_url, query).json()
+                requests.get(self.township_service_url, query)
+
+                query = {
+                    "where": "1=1",
+                    "returnGeometry": "false",
+                    "outFields": "OBJECTID",
+                    "resultRecordCount": "1",
+                    "f": "pjson"
+                }
+                requests.get(self.section_service_url, query)
             # Need to be more specific here, not great to just have a blanket except
             # Need to do this here because internal validation overwrites errors set in updateParameters
             except:
                 parameters.state.setErrorMessage("Unable to connect to service. This tool requires an internet connection.")
                 parameters.township.setErrorMessage("Unable to connect to service. This tool requires an internet connection.")
-                parameters.range.setErrorMessage("Unable to connect to service. This tool requires an internet connection.")
+                parameters.section.setErrorMessage("Unable to connect to service. This tool requires an internet connection.")
         
         return
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
         """The source code of the tool."""
+
+        # Load parameters and define helpful variables
+        parameters = archelp.Parameters(parameters)
+        current_view = self.project.activeView
+        split_township = parameters.township.valueAsText.split()
+        state_abbr = constants.STATE_ABBR(parameters.state.valueAsText)
+
+        # Change camera extent and zoom
+        if current_view is not None:
+            # Get appropriate extent from service
+            # Need some error handling here
+            if not parameters.section.altered:
+                query = {
+                    "where": f"STATEABBR = '{state_abbr}' AND TWNSHPLAB LIKE '%{split_township[0]}%{split_township[1]}'",
+                    "returnExtentOnly": "true",
+                    "outSR": f"{current_view.map.spatialReference.factoryCode}",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.township_service_url, query).json()
+            else:
+                query = {
+                    "where": f"STATEABBR = '{state_abbr}' AND TWNSHPLAB LIKE '%{split_township[0]}%{split_township[1]}'",
+                    "returnGeometry": "false",
+                    "outFields": "PLSSID",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.township_service_url, query).json()
+                plss_id = resp["features"][0]["attributes"]["PLSSID"]
+
+                query = {
+                    "where": f"PLSSID = '{plss_id}' AND FRSTDIVLAB = '{parameters.section.valueAsText}'",
+                    "returnExtentOnly": "true",
+                    "outSR": f"{current_view.map.spatialReference.factoryCode}",
+                    "f": "pjson"
+                }
+                resp = requests.get(self.section_service_url, query).json()
+
+            ext_list = [resp['extent'][i] for i in ['xmin','ymin','xmax','ymax']]
+
+            # Print some value messages to the geoprocessing window.
+            archelp.arcprint(f"WHERE: {query['where']}\nWKID: {query['outSR']}\nEXTENT: {ext_list}")
+            
+            # Set the map extent using the extent recieved from the REST request if it is valid.
+            if "NaN" not in ext_list:
+                ext = arcpy.Extent(
+                    XMin = resp['extent']['xmin'], YMin = resp['extent']['ymin'], 
+                    XMax = resp['extent']['xmax'], YMax = resp['extent']['ymax'], 
+                    spatial_reference = arcpy.SpatialReference(resp['extent']['spatialReference']['latestWkid'])
+                )
+                current_view.camera.setExtent(ext)
+            else:
+                archelp.arcprint("Error: Invalid extent. Check tool parameters.", severity="ERROR")
+        else:
+            archelp.arcprint("Error: No map view selected. Select a map view before running tool.", severity="ERROR")
+
         return
