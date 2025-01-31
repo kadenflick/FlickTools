@@ -37,6 +37,9 @@ TOOLS = {
         "ZoomToCounty_map",
         "ZoomToHUC_map",
         "ZoomToTRS_map"
+    ],
+    "data": [
+        "FieldDomains_data"
     ]
 }
 
