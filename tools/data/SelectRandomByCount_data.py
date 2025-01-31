@@ -1,6 +1,8 @@
 import arcpy
 import random
 
+from typing import Any
+
 import utils.archelp as archelp
 from utils.tool import Tool
 
@@ -32,28 +34,32 @@ class SelectRandomByCount_data(Tool):
             name = "input_features",
             datatype = "GPFeatureLayer",
             parameterType = "Required",
-            direction = "Input")
+            direction = "Input"
+        )
         
         subset_count = arcpy.Parameter(
             displayName = "Subset Count",
             name = "subset_count",
             datatype = "GPLong",
             parameterType = "Required",
-            direction = "Input")
+            direction = "Input"
+        )
         
         selected_count = arcpy.Parameter(
             displayName = "Count",
             name = "selected_count",
             datatype = "GPLong",
             parameterType = "Derived",
-            direction = "Output")
+            direction = "Output"
+        )
 
         selected_feautres = arcpy.Parameter(
             displayName = "Feature With Selection",
             name = "selected_features",
             datatype = "GPFeatureLayer",
             parameterType = "Derived",
-            direction = "Output")
+            direction = "Output"
+        )
         selected_feautres.parameterDependencies = [input_feautres.name]
         selected_feautres.schema.clone = True
 
@@ -78,7 +84,7 @@ class SelectRandomByCount_data(Tool):
 
         return
 
-    def execute(self, parameters: list[arcpy.Parameter], messages: list) -> None:
+    def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
         """The source code of the tool."""
 
         # Load parameters and define helpful variables
@@ -103,6 +109,9 @@ class SelectRandomByCount_data(Tool):
             # Update derived parameters and print message to geoprocessing window
             parameters.selected_features.value = selected_features
             count_selected_features = int(arcpy.management.GetCount(selected_features)[0])
-            arcpy.AddMessage(f"Selected {count_selected_features} features.")
+        else:
+            count_selected_features = 0
+            
+        arcpy.AddMessage(f"Selected {count_selected_features} features.")
 
         return

@@ -147,3 +147,12 @@ def toolbox_abspath(path: os.PathLike) -> os.PathLike:
     """
 
     return os.path.join(Path(__file__).parents[1].absolute(), path)
+
+def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
+    """
+    Attempt to delete scratch names. Return any names that could not
+    be deleted.
+    """
+
+    # Attempt to delete names
+    return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]

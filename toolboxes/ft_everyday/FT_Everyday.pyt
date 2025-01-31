@@ -40,7 +40,8 @@ TOOLS = {
     ],
     "data": [
         "FieldDomains_data",
-        "SelectRandomByCount_data"
+        "SelectRandomByCount_data",
+        "FeatureToWKT_data"
     ]
 }
 

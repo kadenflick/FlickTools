@@ -33,7 +33,8 @@ class FieldDomains_data(Tool):
             name = "input_features",
             datatype = ["GPFeatureLayer", "DEFeatureClass"],
             parameterType = "Required",
-            direction = "Input")
+            direction = "Input"
+        )
         
         fields = arcpy.Parameter(
             displayName = "Field(s)",
@@ -41,7 +42,8 @@ class FieldDomains_data(Tool):
             datatype = "Field",
             parameterType = "Required",
             direction = "Input",
-            multiValue = True)
+            multiValue = True
+        )
         fields.parameterDependencies = [input_features.name]
 
         return [input_features, fields]
