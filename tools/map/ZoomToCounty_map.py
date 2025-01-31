@@ -4,8 +4,12 @@ import requests
 from typing import Any
 
 import utils.archelp as archelp
-import utils.constants as constants
 from utils.tool import Tool
+
+###
+#  TODO: 
+#   - Improve and expand error checking and handling
+###
 
 class ZoomToCounty_map(Tool):
     def __init__(self) -> None:

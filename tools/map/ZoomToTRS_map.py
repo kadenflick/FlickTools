@@ -8,6 +8,14 @@ import utils.archelp as archelp
 import utils.constants as constants
 from utils.tool import Tool
 
+###
+#  TODO: 
+#   - Improve and expand error checking and handling
+#   - Parse individual columns instead of label column
+#       - Allows pulling of PLSS ID in single call to service
+#       - Might reduce number of calls to service.
+###
+
 class ZoomToTRS_map(Tool):
     def __init__(self) -> None:
         """Zooms the map to a specific Township, Section, and Range."""
@@ -26,7 +34,7 @@ class ZoomToTRS_map(Tool):
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
-        """ Define the tool parameters. """
+        """Define the tool parameters."""
         
         state = arcpy.Parameter(
             displayName = "State",

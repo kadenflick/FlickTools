@@ -4,6 +4,12 @@ import utils.archelp as archelp
 import utils.constants as constants
 from utils.tool import Tool
 
+###
+#  TODO: 
+#   - Pretty print domain values
+#   - Can't get domains from rest service endpoints with current setup
+###
+
 class FieldDomains_data(Tool):
     def __init__(self) -> None:
         """Displays the domains for one or more fields in a feature."""
@@ -20,7 +26,7 @@ class FieldDomains_data(Tool):
         return
     
     def getParameterInfo(self) -> list:
-        """Define parameter definitions."""
+        """Define the tool parameters."""
 
         input_features = arcpy.Parameter(
             displayName = "Input Features",

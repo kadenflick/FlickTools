@@ -7,6 +7,12 @@ import utils.archelp as archelp
 import utils.constants as constants
 from utils.tool import Tool
 
+###
+#  TODO: 
+#   - Pull state names from service instead on constants list
+#   - Improve and expand error checking and handling
+###
+
 class ZoomToHUC_map(Tool):
     def __init__(self) -> None:
         """ Zooms the map to a specific HUC in the US."""

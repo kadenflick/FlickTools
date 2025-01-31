@@ -39,7 +39,8 @@ TOOLS = {
         "ZoomToTRS_map"
     ],
     "data": [
-        "FieldDomains_data"
+        "FieldDomains_data",
+        "SelectRandomByCount_data"
     ]
 }
 
