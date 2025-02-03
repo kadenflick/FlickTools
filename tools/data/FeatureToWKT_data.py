@@ -82,12 +82,16 @@ class FeatureToWKT_data(Tool):
         # Load parameters in a useful format
         parameters = archelp.Parameters(parameters)
 
+        # Update spatial reference to the spatial reference of input features
+        if parameters.input_features.altered and not parameters.input_features.hasBeenValidated:
+            parameters.spatial_reference.value = arcpy.Describe(parameters.input_features.valueAsText).featureClass.spatialReference.PCSCode
+
         # Enable or disable output file box depending on whether the checkbox is checked or not
         if parameters.file_checkbox.value:
             parameters.output_file.enabled = True
 
             if parameters.input_features.altered and not parameters.output_file.altered:
-                file_name = archelp.sanitize_filename(f"{os.path.basename(parameters.input_features.valueAsText)}_FeatureToWKT.txt")
+                file_name = f"{os.path.basename(parameters.input_features.valueAsText)}_FeatureToWKT.txt"
                 parameters.output_file.value = os.path.join(self.project_location, file_name)
         elif not parameters.file_checkbox.value:
             parameters.output_file.enabled = False
@@ -105,7 +109,7 @@ class FeatureToWKT_data(Tool):
 
         # Set warning messages if input features meet certain criteria
         if parameters.input_features.altered and arcpy.Describe(parameters.input_features.valueAsText).FIDSet == "":
-            parameters.input_features.setWarningMessage("Input features do not have a selection.")
+            parameters.input_features.setWarningMessage("Input features do not have a selection. All features will be converted.")
 
         return
 
@@ -120,7 +124,7 @@ class FeatureToWKT_data(Tool):
         scratch_features = []
 
         if arcpy.Describe(wkt_features).featureClass.spatialReference.PCSCode != parameters.spatial_reference.value.PCSCode:
-            scratch_features = [arcpy.CreateScratchName(prefix=i, data_type="FeatureClass", workspace=arcpy.env.scratchGDB) for i in range(2)]
+            scratch_features = [arcpy.CreateScratchName(suffix=f"_{i}", data_type="FeatureClass", workspace=arcpy.env.scratchGDB) for i in range(2)]
             arcpy.ExportFeatures_conversion(wkt_features, scratch_features[0])
             arcpy.Project_management(scratch_features[0], scratch_features[1], parameters.spatial_reference.value.PCSCode)
             wkt_features = scratch_features[1]
