@@ -6,6 +6,11 @@ from pathlib import Path
 from typing import Literal, Any, Generator
 from enum import Enum
 
+###
+#  TODO: 
+#   - Improve create file function
+###
+
 class controlCLSID(Enum):
     """
     See [Parameter Controls](https://pro.arcgis.com/en/pro-app/latest/arcpy/geoprocessing_and_python/parameter-controls.htm)
@@ -156,3 +161,15 @@ def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
 
     # Attempt to delete names
     return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]
+
+def create_file(complete_path: str) -> str:
+    """Validates file path and creates directory if necessary."""
+
+    # Split path
+    head, tail = os.path.split(complete_path)
+
+    # Create directory if it doesn't exist
+    if not os.path.exists(head):
+        os.mkdir(head)
+
+    return os.path.join(head, tail)

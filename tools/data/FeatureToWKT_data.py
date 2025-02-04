@@ -67,7 +67,7 @@ class FeatureToWKT_data(Tool):
             name = "output_file",
             datatype = "DETextfile",
             parameterType = "Optional",
-            direction = "Ouput",
+            direction = "Output",
             enabled = False
         )
         
