@@ -1,6 +1,6 @@
 # FlickTools
 
-FlickTools is ***another*** very cleverly named collection of tools and toolboxes to make life a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to.
+FlickTools is ***another*** very cleverly named collection of tools and toolboxes to make the life of a GIS professional a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to.
 
 ## Toolboxes
 
