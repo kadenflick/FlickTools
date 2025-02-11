@@ -7,6 +7,13 @@ from typing import Any
 import utils.archelp as archelp
 from utils.tool import Tool
 
+###
+#  TODO: 
+#   - Stop output text file being added to project
+#       - Might have to manually check for and remove it
+#   - Add checkbox to open text file after it is created
+###
+
 class FeatureToWKT_data(Tool):
     def __init__(self) -> None:
         """Converts features in to WKT format."""
@@ -142,7 +149,7 @@ class FeatureToWKT_data(Tool):
 
         # Write output to file
         if parameters.file_checkbox.value:
-            with open(archelp.create_file(parameters.output_file.valueAsText), "a") as outfile:
+            with open(archelp.create_file(parameters.output_file.valueAsText), "w") as outfile:
                 for wkt in wkt_strings:
                     outfile.write(f"{wkt}\n")
 
