@@ -35,12 +35,6 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 1. Open the **Edit Tool Defaults** tool.
 1. Change the tool parameters, then click the **Run** button.
 
-<br>
-
-**Resolving Issues**
-
-Issues with adding a toolbox to an ArcGIS Pro project can typically be resolved by removing the toolbox from the project, saving and restarting the project, then re-adding the toolbox.
-
 ## Contact
 
 Feel free to get in touch with any comments, questions, suggestions, or if things start breaking on you. The GitHub repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
