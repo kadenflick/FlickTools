@@ -22,14 +22,11 @@ class FeatureToWKT_data(Tool):
         # Initialize the parent class
         super().__init__()
                 
-        # Overrides
+        # Tool parameters
         self.label = "Feature To WKT"
         self.alias = "FeatureToWKT_data"
         self.description = "Converts features in to WKT format."
         self.category = "Conversion"
-        
-        # Parameters
-        self.params = {}
         
         return
     

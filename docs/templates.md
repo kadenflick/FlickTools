@@ -15,6 +15,7 @@ class ToolName_category(Tool):
         """
         Tool Description.
         """
+
         # Initialize base class parameters
         super().__init__()
 
@@ -23,11 +24,12 @@ class ToolName_category(Tool):
         self.alias = "ToolName_category"
         self.description = "Tool description."
         self.category = "Toolbox Category"
+
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:
         """Define the tool parameters."""
-        return [] 
+        return []
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
         """The source code of the tool."""
