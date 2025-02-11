@@ -1,6 +1,6 @@
 # Tool Template
 
-Use this template to create a new toolbox tool. The naming convention for a tool source file is `NameOfTool_category.py`. New tools should be placed in the approriate category subfolder in the `tools` directory. Once a new tool is created, update the `.pyt` file for the appropriate toolbox.
+Use this template to create a new toolbox tool. The naming convention for a tool source file is `NameOfTool_category.py`. New tools should be placed in the approriate category subfolder in the `tools` directory. Once a new tool is created, add it to a toolbox by updating the appropriate `.pyt` file.
 
 ```python
 import arcpy
@@ -38,7 +38,7 @@ class ToolName_category(Tool):
 
 # Tool Documentation Template
 
-Use this template to document a new tool. The naming convention for a tool documentation file is `tool_NameOfTool_category.md`. New documentation files should be placed in the `docs` directory.
+Use this template to document a new tool. The naming convention for a tool documentation file is `tool_NameOfTool_category.md`. New documentation files should be placed in the `docs` directory. Once a new documentation page is created, add a link to the [Tool List](Tool_List.md) under the appropriate category. Once the tool is added to a toolbox, include a link to the tool documention in the toolbox documentation file.
 
 ```markdown
 text
