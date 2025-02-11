@@ -12,6 +12,7 @@ from utils.tool import Tool
 #   - Stop output text file being added to project
 #       - Might have to manually check for and remove it
 #   - Add checkbox to open text file after it is created
+#   - Refresh feature selection warning if selection changes
 ###
 
 class FeatureToWKT_data(Tool):

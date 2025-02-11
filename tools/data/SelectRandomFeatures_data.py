@@ -10,6 +10,7 @@ from utils.tool import Tool
 #  TODO: 
 #   - Add option to zoom to selected features
 #   - Add where clause to pre-filter the features to select
+#   - Refresh the subset count check when feature selection changes
 ###
 
 class SelectRandomFeatures_data(Tool):
