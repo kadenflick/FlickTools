@@ -35,6 +35,11 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 1. Open the **Edit Tool Defaults** tool.
 1. Change the tool parameters, then click the **Run** button.
 
+<br>
+
+**Resolving Issues**
+
+Issues with adding a toolbox to an ArcGIS Pro project can typically be resolved by removing the toolbox from the project, saving and restarting the project, then re-adding the toolbox.
 
 ## Contact
 
