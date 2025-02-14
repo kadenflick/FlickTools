@@ -8,7 +8,10 @@ from enum import Enum
 
 ###
 #  TODO: 
+#   - Improve toolbox config
 #   - Improve create file function
+#   - Maybe turn controlCLSID into a dataclass
+#       - Having issues with the enum
 ###
 
 class controlCLSID(Enum):
@@ -16,6 +19,7 @@ class controlCLSID(Enum):
     See [Parameter Controls](https://pro.arcgis.com/en/pro-app/latest/arcpy/geoprocessing_and_python/parameter-controls.htm)
     documentation for more information on parameter controls.
     """
+
     EXCLUDE_INTERSECT_AND_UNION = '{15F0D1C1-F783-49BC-8D16-619B8E92F668}'
     SLIDER_RANGE = '{C8C46E43-3D27-4485-9B38-A49F3AC588D9}'
     LARGE_NUMBER = '{7A47E79C-9734-4167-9698-BFB00F43AE41}'
@@ -33,11 +37,12 @@ class Parameters(list):
     functions with an object that can be access the parameters by name,
     index, or attribute.
 
-    You still need tool functions to return a list of parameters as the
-    parameters list is rebuilt each time it is passed beteween the tool
+    Tool functions must still return a list of parameters because the
+    parameters list is rebuilt each time it is passed between tool
     functions. That list can be immediately converted to a Parameters object
     at the beginning of the function.
     """
+
     def __init__(self, parameters: list[arcpy.Parameter]) -> None:
         self.__dict__.update({parameter.name: parameter for parameter in parameters})
         return
