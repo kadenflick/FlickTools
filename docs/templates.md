@@ -41,5 +41,52 @@ class ToolName_category(Tool):
 Use this template to document a new tool. The naming convention for a tool documentation file is `tool_NameOfTool_category.md`. New documentation files should be placed in the `docs` directory. Once a new documentation page is created, add a link to the [Tool List](Tool_List.md) under the appropriate category. Once the tool is added to a toolbox, include a link to the tool documention in the toolbox documentation file.
 
 ```markdown
-text
+[ [FlickTools](../README.md) | [Tool List](Tool_List.md) ]
+
+# Tool Name
+
+Tool description.
+
+**Category:** Tool Category<br>
+**Source File:** [NameOfTool_category.py](../tools/category/NameOfTool_category.py)<br>
+**Available in:** [Toolbox Name](toolbox_Toolbox_Name.md)
+
+# Usage
+
+This tool is meant for use both in ArcGIS Pro and Python. Other notes about tool useage.
+
+## Dialog
+
+Parameters when running the tool through the ArcGIS Pro geoprocessing dialog.
+
+>| Label | Description | Type |
+>| :--- | :--- | :--- |
+>| *Attribute* | *Description* | *Type* |
+
+### Derived Output
+
+>| Label | Description | Type |
+>| :--- | :--- | :--- |
+>| *Attribute* | *Description* | *Type* |
+
+## Python
+
+\```python
+FlickTools.<Tool Name>(<Required Input>, {<Optional Input>})
+\```
+
+>| Label | Description | Type |
+>| :--- | :--- | :--- |
+>| *Attribute* | *Description* | *Type* |
+
+### Derived Output
+
+>| Label | Description | Type |
+>| :--- | :--- | :--- |
+>| *Attribute* | *Description* | *Type* |
+
+### Code Sample
+\```python
+# Code sample
+\```
 ```
