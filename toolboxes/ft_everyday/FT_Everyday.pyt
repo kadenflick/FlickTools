@@ -41,7 +41,8 @@ TOOLS = {
     "data": [
         "FieldDomains_data",
         "SelectRandomFeatures_data",
-        "FeatureToWKT_data"
+        "FeatureToWKT_data",
+        "UniqueValuesInColumn_data"
     ]
 }
 

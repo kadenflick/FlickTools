@@ -7,7 +7,10 @@ from utils.tool import Tool
 ###
 #  TODO: 
 #   - Pretty print domain values
+#       - Can probably use the basic version of the formatting function
+#       - Maybe put sorting the list in the formatting funcion
 #   - Can't get domains from rest service endpoints with current setup
+#   - Not sure how this will behave with subtypes
 ###
 
 class FieldDomains_data(Tool):
@@ -57,35 +60,35 @@ class FieldDomains_data(Tool):
         # Get all domains objects and filtered field objects in input features
         feature_properties = arcpy.Describe(parameters.input_features.valueAsText)
         domains = {d.name: d for d in arcpy.da.ListDomains(feature_properties.path)}
-        fields = [f for f in feature_properties.fields if f.name in parameters.fields.valueAsText.split(";")]
+        fields = dict(sorted({f.aliasName: f for f in feature_properties.fields if f.name in parameters.fields.valueAsText.split(";")}.items())).values()
 
         # Build output for each input field
         out_message = []
-        num_fields = len(fields)
 
-        for counter, field in enumerate(fields):
-            out_message.append(f"## FIELD: {field.aliasName} [{field.name}]\n")
+        for field in fields:
+            temp_message = [f"## {field.aliasName} [{field.name}]"]
             
             # Build info about domain if there is one
             if field.domain in domains:
                 domain = domains[field.domain]
 
-                out_message.append((f"{constants.TAB}Domain: {domain.name}\n"
-                                    f"{constants.TAB}Type: {domain.domainType}\n"
-                                    f"{constants.TAB}Nullable: {field.isNullable}\n\n"))
+                temp_message.extend([f"{constants.TAB}Domain: {domain.name}",
+                                    f"{constants.TAB}Type: {domain.domainType}",
+                                    f"{constants.TAB}Nullable: {field.isNullable}\n"])
                 
                 if domain.domainType == "CodedValue":
-                    out_message.append([f"{constants.TAB}{k} : {v}" for k, v in domain.codedValues.items()])
+                    max_length = len(max([str(k) for k in domain.codedValues.keys()], key=len))
+                    temp_message.extend(sorted([f"{constants.TAB}{str(k).ljust(max_length)} : {v}" for k, v in domain.codedValues.items()]))
                 elif domain.domainType == "Range":
-                    out_message.append((f"{constants.TAB}Min: {domain.range[0]}\n"
-                                        f"{constants.TAB}Max: {domain.range[1]}\n"))
+                    temp_message.extend([f"{constants.TAB}Min: {domain.range[0]}",
+                                        f"{constants.TAB}Max: {domain.range[1]}"])
             else:
-                out_message.append(f"{constants.TAB}Domain: <None>\n")
+                temp_message.append(f"{constants.TAB}Domain: <None>")
 
-            # Print an extra return if we have more fields to print
-            if counter < num_fields - 1: out_message.append("\n")
+            # Combine all temp messages and append to output_message
+            out_message.append("\n".join(temp_message))
 
         # Print output message
-        archelp.arcprint("".join(out_message))
+        archelp.arcprint("\n\n".join(out_message))
         
         return

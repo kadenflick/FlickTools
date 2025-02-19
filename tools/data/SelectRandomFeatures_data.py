@@ -9,7 +9,7 @@ from utils.tool import Tool
 ###
 #  TODO: 
 #   - Add option to zoom to selected features
-#   - Add where clause to pre-filter the features to select
+#   - Refresh the subset count check when feature selection changes
 ###
 
 class SelectRandomFeatures_data(Tool):
@@ -19,7 +19,7 @@ class SelectRandomFeatures_data(Tool):
         # Initialize the parent class
         super().__init__()
                 
-        # Overrides
+        # Tool parameters
         self.label = "Select Random Features"
         self.alias = "SelectRandomFeatures_data"
         self.description = "Selects a random subset of rows in a given feature."

@@ -7,7 +7,7 @@ def placeholder_tool(tool_name: str, exception: Exception, traceback: str) -> ty
     Higher order function for creating a tool class that represents a broken
     tool.
     """
-
+    
     class _BrokenImport(Tool):
         __name__ = f"{tool_name}_BrokenImport"
         def __init__(self):

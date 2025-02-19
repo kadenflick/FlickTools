@@ -1,14 +1,14 @@
 # FlickTools
 
-FlickTools is ***another*** very cleverly named collection of tools and toolboxes to make life a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to do.
+FlickTools is ***another*** very cleverly named collection of tools and toolboxes to make the life of a GIS professional a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to.
 
 ## Toolboxes
 
-Each toolbox contains tools that are useful in different scenarios. Within each toolbox, tools are categorized and grouped by theme. For a full list of all tools, see the **[Tool List](docs/FT_Tool_List.md)**.
+Each toolbox contains tools that are useful in different scenarios. Within each toolbox, tools are categorized and grouped by theme. For a full list of all tools, see the **[Tool List](docs/Tool_List.md)**.
 
-- **[FT Everyday Toolbox:](docs/ft_everyday_toolbox.md)** Your everyday toolbox. It contains tools that you might use everyday.
-- **[FT Fire Toolbox:](docs/ft_everyday_toolbox.md)** Tools to make the life of a GISS mapping fire with the NIFS a little easier.
-- **[FT Config Toolbox:](docs/ft_everyday_toolbox.md)** Don't like mucking about in JSON to set configs? Here you go.
+- **[FT Everyday Toolbox:](docs/toolbox_FT_Everyday.md)** Your everyday toolbox. It contains tools that you might use everyday.
+- **[FT Fire Toolbox:](docs/toolbox_FT_Fire.md)** Tools to make the life of a GISS mapping fire with the NIFS a little easier.
+- **[FT Config Toolbox:](docs/toolbox_FT_Config.md)** Don't like mucking about in JSON to set configs? Here you go.
 
 ## Setup and Use
 
@@ -31,10 +31,9 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 
 **Editing Default Tool Values**
 
-1. Add the **[FT Config](docs/FT_Config_Toolbox.md)** toolbox to an ArcGIS Pro project.
+1. Add the **[FT Config](docs/toolbox_FT_Config.md)** toolbox to an ArcGIS Pro project.
 1. Open the **Edit Tool Defaults** tool.
 1. Change the tool parameters, then click the **Run** button.
-
 
 ## Contact
 
