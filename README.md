@@ -40,5 +40,6 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 Feel free to get in touch with any comments, questions, suggestions, or if things start breaking on you. The GitHub repository for this project can be found [here](https://github.com/kadenflick/FlickTools).
 
 ---<br>
+FlickTools version: v20250220
 These tools have only been tested for use with ArcGIS Pro 3.3<br>
 This project is based on the [pytframe2](https://github.com/hwelch-fle/pytframe2) framework developed by Hayden Welch.
