@@ -10,6 +10,7 @@ import utils.constants as constants
 
 ###
 #  TODO: 
+#   - Provide option to print domain values, not domain codes
 #   - Improve printing
 #       - Correctly justify column headers and values
 #       - Potentially split output into multiple sets of columns
