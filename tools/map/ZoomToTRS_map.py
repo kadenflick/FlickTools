@@ -1,6 +1,7 @@
 import arcpy
 import requests
 import re
+import random
 
 from typing import Any
 
@@ -239,5 +240,12 @@ class ZoomToTRS_map(Tool):
                 archelp.arcprint("Error: Invalid extent. Check tool parameters.", severity="ERROR")
         else:
             archelp.arcprint("Error: No map view selected. Select a map view before running tool.", severity="ERROR")
+
+        # Print a random compliment to the geoprocessing pane
+        # modify arcprint to add messages to the message object in the execute function
+        # maybe make the messages object reference a class variable that gets added to so that you don't have to pass the messages list every time
+        # arcprint function is part of the tool class, not archelp
+        # use the progressor the update the user about the tools progress instead of printing messages to the output
+        if self.ft_config.value("get_compliments"): archelp.arcprint(f"\n{random.choice(constants.COMPLIMENTS)} :)")
 
         return
