@@ -168,7 +168,7 @@ class UniqueValuesInColumn_data(Tool):
                 "\n".join(df_strings[1:])
             ]))
         
-        archelp.arcprint("\n\n".join(formatted_output))
+        self._add_tool_message("\n\n".join(formatted_output))
 
         # Write output to excel file if indicated
         if parameters.output_as_excel.value:
@@ -177,5 +177,8 @@ class UniqueValuesInColumn_data(Tool):
             with pd.ExcelWriter(output_file, mode="w", engine="openpyxl") as writer:
                 for sheet, df in evaluated_dataframes.items():
                     df.to_excel(writer, sheet, index=False)
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
 
         return

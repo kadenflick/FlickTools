@@ -1,10 +1,13 @@
 import arcpy
 import os
+import random
 
-from typing import Any
+from typing import Any, Literal
 from abc import ABC
+from collections import defaultdict
 
 import utils.archelp as archelp
+import utils.constants as constants
 
 class Tool(ABC):
     """Base class for all tools."""
@@ -18,6 +21,7 @@ class Tool(ABC):
         self.canRunInBackground = False
         self.category = "Unassigned"
         self.ft_config = archelp.ToolboxConfig(archelp.toolbox_abspath(r"utils\configs\FlickTools_config.json"))
+        self.tool_messages = defaultdict(list)
         
         # Project variables
         self.project = arcpy.mp.ArcGISProject("CURRENT")
@@ -27,6 +31,31 @@ class Tool(ABC):
         # Database variables
         self.default_gdb = self.project.defaultGeodatabase
         self.databases = self.project.databases
+
+        return
+    
+    def _add_tool_message(self, message, severity: Literal['INFO', 'WARNING', 'ERROR'] = 'INFO') -> None:
+        """
+        Print a message to the geoprocessing window and append to dict
+        of tool messages.
+        """
+
+        # Append message to tool message and call arcprint to print the message
+        self.tool_messages[severity].append(message)
+        archelp.arcprint(message, severity=severity)
+
+        return
+    
+    def _get_complimented(self) -> None:
+        """Print a compliment if asked to."""
+
+        # Print compliment with leading newline if there are tool messages
+        if self.ft_config.value("get_compliments"):
+            out_message = [f"{random.choice(constants.COMPLIMENTS)} :)"]
+            if self.tool_messages: out_message.insert(0, "")
+
+            archelp.arcprint("\n".join(out_message))
+        
         return
     
     def getParameterInfo(self) -> list[arcpy.Parameter]:

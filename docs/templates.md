@@ -33,6 +33,13 @@ class ToolName_category(Tool):
     
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
         """The source code of the tool."""
+
+        # Load parameters in a useful format
+        parameters = archelp.Parameters(parameters)
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
+
         return
 ```
 

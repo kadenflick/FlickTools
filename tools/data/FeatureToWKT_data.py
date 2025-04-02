@@ -139,7 +139,7 @@ class FeatureToWKT_data(Tool):
             wkt_strings = [row[0] for row in cursor]
 
         # Print output
-        archelp.arcprint("\n".join(wkt_strings))
+        self._add_tool_message("\n".join(wkt_strings))
 
         # Add output to clipboard
         if parameters.clipboard_checkbox.value:
@@ -153,5 +153,8 @@ class FeatureToWKT_data(Tool):
 
         # Clean up
         archelp.delete_scratch_names(scratch_features)
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
 
         return

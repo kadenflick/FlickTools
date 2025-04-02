@@ -12,5 +12,12 @@
         , "category": null
         , "value": "HUC8"
         , "list": ["HUC2", "HUC4", "HUC6", "HUC8", "HUC10", "HUC12", "HUC14", "HUC16"]
+    },
+    "get_compliments": {
+        "alias": "Recieve compliments"
+        , "type": "GPBoolean"
+        , "category": null
+        , "value": true
+        , "list": []
     }
 }

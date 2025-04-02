@@ -89,6 +89,9 @@ class FieldDomains_data(Tool):
             out_message.append("\n".join(temp_message))
 
         # Print output message
-        archelp.arcprint("\n\n".join(out_message))
+        self._add_tool_message("\n\n".join(out_message))
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
         
         return
