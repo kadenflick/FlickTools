@@ -132,6 +132,7 @@ def arcprint(*values: object,
     
     end = "" if end == '\n' else end
     message = f"{sep.join(map(str, values))}{end}"
+    
     # Print the message to the ArcGIS Pro message queue with the appropriate severity
     match severity:
         case "WARNING":

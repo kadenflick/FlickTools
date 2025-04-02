@@ -143,7 +143,7 @@ class ZoomToCounty_map(Tool):
             ext_list = [resp['extent'][i] for i in ['xmin','ymin','xmax','ymax']]
 
             # Print some value messages to the geoprocessing window.
-            archelp.arcprint(f"WHERE: {query['where']}\nWKID: {query['outSR']}\nEXTENT: {ext_list}")
+            # self._add_tool_message(f"WHERE: {query['where']}\nWKID: {query['outSR']}\nEXTENT: {ext_list}")
             
             # Set the map extent using the extent recieved from the REST request if it is valid.
             if "NaN" not in ext_list:
@@ -154,8 +154,11 @@ class ZoomToCounty_map(Tool):
                 )
                 current_view.camera.setExtent(ext)
             else:
-                archelp.arcprint("Error: Invalid extent. Check tool parameters.", severity="ERROR")
+                self._add_tool_message("Error: Invalid extent. Check tool parameters.", severity="ERROR")
         else:
-            archelp.arcprint("Error: No map view selected. Select a map view before running tool.", severity="ERROR")
+            self._add_tool_message("Error: No map view selected. Select a map view before running tool.", severity="ERROR")
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
         
         return

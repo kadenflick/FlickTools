@@ -113,6 +113,9 @@ class SelectRandomFeatures_data(Tool):
         else:
             count_selected_features = 0
             
-        arcpy.AddMessage(f"Selected {count_selected_features} features.")
+        self._add_tool_message(f"Selected {count_selected_features} features.")
+
+        # Print a random compliment to the geoprocessing pane if asked to
+        self._get_complimented()
 
         return
