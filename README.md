@@ -14,7 +14,7 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 
 ### Downloading the Latest Version of FlickTools
 
-There are several ways to download FlickTools to your computer. The most common way is to clone the GitHub repository as you would any other. Staying current with the `main` branch will make sure you always have the latest updates. Instructions for clong a GitHub repository can be found [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). If you don't feel like cloning the repository, the FlickTools source code for every version can be downloaded from GitHub. Instructions for that are below. Using this method requires manual updates to the toolbox, which might break the links to the toolbox in your ArcGIS Pro projects if not done carefully.
+There are several ways to download FlickTools to your computer. The most common way is to clone the GitHub repository as you would any other. Staying current with the `main` branch will make sure you always have the latest updates. Instructions for cloning a GitHub repository can be found [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). If you don't feel like cloning the repository, the FlickTools source code for every version can be downloaded from GitHub. Instructions for that are below. Using this method requires manual updates to the toolbox, which might break the links to the toolbox in your ArcGIS Pro projects if not done carefully.
 
 If you prefer not to clone the repository, use these instructions to download the latest version:
 
