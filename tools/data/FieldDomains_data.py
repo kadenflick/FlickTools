@@ -6,6 +6,7 @@ from utils.tool import Tool
 
 ###
 #  TODO: 
+#   - Make field printing consistent with unique values in field
 #   - Pretty print domain values
 #       - Can probably use the basic version of the formatting function
 #       - Maybe put sorting the list in the formatting funcion

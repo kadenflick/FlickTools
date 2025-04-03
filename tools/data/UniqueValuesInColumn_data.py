@@ -10,13 +10,12 @@ import utils.constants as constants
 
 ###
 #  TODO: 
-#   - Provide option to print domain values, not domain codes
 #   - Improve printing
+#       - Print total number of rows
 #       - Correctly justify column headers and values
 #       - Potentially split output into multiple sets of columns
 #   - Improve excel export formatting
-#   - Replace whitespace characters with a meaningful value
-#       - Potentially set whitespace to nan and then specifify what nan should be in output
+#   - Include progressor messages
 ###
 
 class UniqueValuesInColumn_data(Tool):
@@ -54,6 +53,15 @@ class UniqueValuesInColumn_data(Tool):
             multiValue = True
         )
         fields.parameterDependencies = [input_features.name]
+
+        use_domains = arcpy.Parameter(
+            displayName = "Use domain descriptions",
+            name = "use_domains",
+            datatype = "Boolean",
+            parameterType = "Required",
+            direction = "Input"
+        )
+        use_domains.value = True
         
         include_counts = arcpy.Parameter(
             displayName = "Include counts",
@@ -92,7 +100,7 @@ class UniqueValuesInColumn_data(Tool):
         )
         output_file.filter.list = ["xlsx", "xls"]
 
-        return [input_features, fields, include_counts, individual_eval, output_as_excel, output_file]
+        return [input_features, fields, use_domains, include_counts, individual_eval, output_as_excel, output_file]
     
     def updateParameters(self, parameters: list[arcpy.Parameter]) -> None:
         """ 
@@ -116,7 +124,46 @@ class UniqueValuesInColumn_data(Tool):
 
         return
     
-    def evaluate_dataframe(self, input_df: pd.DataFrame, include_counts: bool, columns: list[str] = None) -> pd.DataFrame:
+    def _table_to_dataframe(self, table: str, column_names: pd.DataFrame, replace_domains: bool) -> pd.DataFrame:
+        """
+        Convert table to pandas DataFrame and replace domain codes and
+        values as neccessary.
+        """
+
+        # Set up output and domain lookup table
+        parsed_rows = []
+        feature_info = arcpy.Describe(table)
+        domains = {d.name: d.codedValues for d in arcpy.da.ListDomains(feature_info.path) if d.domainType == "CodedValue"}
+        lookup = {field.name: domains[field.domain] for field in feature_info.fields if field.name in column_names and field.domain in domains.keys()}
+
+        # Convert to dataframe
+        with arcpy.da.SearchCursor(table, column_names) as cursor:
+            for row in cursor:
+                parsed_row = []
+
+                for index, column in enumerate(column_names):
+                    col_value = str(row[index])
+
+                    # Replace row values with domain desriptions if indicated
+                    if replace_domains and column in lookup.keys() and row[index] in lookup[column].keys():
+                        col_value = str(lookup[column][row[index]])
+
+                    # Replace row values with replacements
+                    if col_value in (None, "None"):
+                        col_value = "<Null>"
+                    elif col_value == "":
+                        col_value = "<Empty String>"
+                    elif col_value.isspace():
+                        col_value = "<Whitespace>"
+
+                    parsed_row.append(col_value)
+
+                # Append to final output
+                parsed_rows.append(parsed_row)
+
+        return pd.DataFrame(parsed_rows, columns=column_names)
+
+    def _evaluate_dataframe(self, input_df: pd.DataFrame, include_counts: bool, columns: list[str] = None) -> pd.DataFrame:
         """
         Evaluate the input dataframe for duplicates. Include counts if
         indicated.
@@ -141,17 +188,15 @@ class UniqueValuesInColumn_data(Tool):
 
         # Load input features to a pandas dataframe
         column_names = parameters.fields.valueAsText.split(";")
-
-        with arcpy.da.SearchCursor(parameters.input_features.valueAsText, column_names) as cursor:
-            input_df = pd.DataFrame((row for row in cursor), columns=column_names)
+        input_df = self._table_to_dataframe(parameters.input_features.valueAsText, column_names, parameters.use_domains.value)
 
         # Evaluate all columns together or individually as indicated
         include_counts = parameters.include_counts.value
 
         if parameters.individual_eval.value:
-            evaluated_dataframes = {column: self.evaluate_dataframe(input_df, include_counts, column) for column in column_names}    
+            evaluated_dataframes = {column: self._evaluate_dataframe(input_df, include_counts, column) for column in column_names}    
         else:
-            evaluated_dataframes = {"All Input Columns": self.evaluate_dataframe(input_df, include_counts, column_names)}
+            evaluated_dataframes = {"All Input Columns": self._evaluate_dataframe(input_df, include_counts, column_names)}
 
         # Print output to geoprocessing pane
         formatted_output = []
