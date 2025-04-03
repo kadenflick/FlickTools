@@ -11,7 +11,6 @@ import utils.constants as constants
 ###
 #  TODO: 
 #   - Improve printing
-#       - Print total number of rows
 #       - Correctly justify column headers and values
 #       - Potentially split output into multiple sets of columns
 #   - Improve excel export formatting
@@ -202,10 +201,11 @@ class UniqueValuesInColumn_data(Tool):
         formatted_output = []
 
         for column, df in evaluated_dataframes.items():
-            df_strings = [f"{constants.TAB}{s}" for s in df.to_string(index=False).split("\n")]
+            df_strings = [f"{constants.TAB}{s}" for s in df.to_string(justify="left", index=False).split("\n")]
 
             formatted_output.append("\n".join([
                 f"## FIELD: {column}",
+                f"{constants.TAB}Feature rows: {arcpy.GetCount_management(parameters.input_features.valueAsText)}",
                 f"{constants.TAB}Unique combinations: {len(df.index)}",
                 "",
                 df_strings[0],
