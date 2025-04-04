@@ -177,7 +177,27 @@ class UniqueValuesInColumn_data(Tool):
             evaluated_dataframe.drop(columns="Count", inplace=True)
 
         return evaluated_dataframe
-        
+    
+    def _format_dataframe_text(self, input_df: pd.DataFrame) -> list[str]:
+        """Format the console output of a dataframe left justified."""
+
+        # Get dataframe columns
+        df_columns = input_df.columns.values.tolist()
+
+        # Interate over each column and left justify it
+        formatted_columns = []
+
+        for column in df_columns:
+            col_text = input_df.to_string(columns=[column], index=False).split("\n")
+            max_len = len(max(col_text, key=len))
+
+            formatted_column = [f"{i.strip():<{max_len}}" for i in col_text]
+            formatted_columns.append(formatted_column)
+
+        # Combine justified columns to format suitable for printing
+        formatted_df = ["  ".join(i) for i in list(zip(*formatted_columns))]
+
+        return formatted_df
 
     def execute(self, parameters: list[arcpy.Parameter], messages: list[Any]) -> None:
         """The source code of the tool."""
@@ -201,10 +221,11 @@ class UniqueValuesInColumn_data(Tool):
         formatted_output = []
 
         for column, df in evaluated_dataframes.items():
-            df_strings = [f"{constants.TAB}{s}" for s in df.to_string(justify="left", index=False).split("\n")]
+            # df_strings = [f"{constants.TAB}{s}" for s in df.to_string(justify="left", index=False).split("\n")]
+            df_strings = [f"{constants.TAB}{s}" for s in self._format_dataframe_text(df)]
 
             formatted_output.append("\n".join([
-                f"## FIELD: {column}",
+                f"## COLUMN: {column}",
                 f"{constants.TAB}Feature rows: {arcpy.GetCount_management(parameters.input_features.valueAsText)}",
                 f"{constants.TAB}Unique combinations: {len(df.index)}",
                 "",
