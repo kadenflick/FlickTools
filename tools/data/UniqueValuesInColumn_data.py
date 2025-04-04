@@ -221,17 +221,22 @@ class UniqueValuesInColumn_data(Tool):
         formatted_output = []
 
         for column, df in evaluated_dataframes.items():
-            # df_strings = [f"{constants.TAB}{s}" for s in df.to_string(justify="left", index=False).split("\n")]
-            df_strings = [f"{constants.TAB}{s}" for s in self._format_dataframe_text(df)]
+            # df_strings = [f"{constants.TAB}{s}" for s in self._format_dataframe_text(df)]
+            df_strings = self._format_dataframe_text(df)
 
             formatted_output.append("\n".join([
                 f"## COLUMN: {column}",
                 f"{constants.TAB}Feature rows: {arcpy.GetCount_management(parameters.input_features.valueAsText)}",
                 f"{constants.TAB}Unique combinations: {len(df.index)}",
                 "",
-                df_strings[0],
-                f"{constants.TAB}{'-' * (len(df_strings[0]) - len(constants.TAB))}",
-                "\n".join(df_strings[1:])
+                # df_strings[0],
+                # f"{constants.TAB}{'-' * (len(df_strings[0]) - len(constants.TAB))}",
+                # "\n".join(df_strings[1:])
+                "".join(archelp.pretty_format(
+                    input_list=df_strings[1:],
+                    header=[df_strings[0], f"{'-' * len(df_strings[0])}"],
+                    prefix=constants.TAB
+                ))
             ]))
         
         self._add_tool_message("\n\n".join(formatted_output))
