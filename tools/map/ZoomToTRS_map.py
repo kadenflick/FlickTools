@@ -9,6 +9,7 @@ from utils.tool import Tool
 
 ###
 #  TODO: 
+#   - Fix issue with not getting all available townships
 #   - Improve and expand error checking and handling
 #   - Parse individual columns instead of label column
 #       - Allows pulling of PLSS ID in single call to service
