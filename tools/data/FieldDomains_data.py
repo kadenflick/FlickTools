@@ -6,6 +6,7 @@ from utils.tool import Tool
 
 ###
 #  TODO: 
+#   - Make field printing consistent with unique values in field
 #   - Pretty print domain values
 #       - Can probably use the basic version of the formatting function
 #       - Maybe put sorting the list in the formatting funcion
@@ -66,22 +67,27 @@ class FieldDomains_data(Tool):
         out_message = []
 
         for field in fields:
-            temp_message = [f"## {field.aliasName} [{field.name}]"]
+            temp_message = [f"## FIELD: {field.name}"]
             
             # Build info about domain if there is one
             if field.domain in domains:
                 domain = domains[field.domain]
 
-                temp_message.extend([f"{constants.TAB}Domain: {domain.name}",
-                                    f"{constants.TAB}Type: {domain.domainType}",
-                                    f"{constants.TAB}Nullable: {field.isNullable}\n"])
+                temp_message.extend([
+                    f"{constants.TAB}Alias: {field.aliasName}",
+                    f"{constants.TAB}Domain: {domain.name}",
+                    f"{constants.TAB}Type: {domain.domainType}",
+                    f"{constants.TAB}Nullable: {field.isNullable}\n"
+                ])
                 
                 if domain.domainType == "CodedValue":
                     max_length = len(max([str(k) for k in domain.codedValues.keys()], key=len))
                     temp_message.extend(sorted([f"{constants.TAB}{str(k).ljust(max_length)} : {v}" for k, v in domain.codedValues.items()]))
                 elif domain.domainType == "Range":
-                    temp_message.extend([f"{constants.TAB}Min: {domain.range[0]}",
-                                        f"{constants.TAB}Max: {domain.range[1]}"])
+                    temp_message.extend([
+                        f"{constants.TAB}Min: {domain.range[0]}",
+                        f"{constants.TAB}Max: {domain.range[1]}"
+                    ])
             else:
                 temp_message.append(f"{constants.TAB}Domain: <None>")
 

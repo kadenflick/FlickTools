@@ -1,10 +1,13 @@
 import arcpy
 import os
 import json
+import itertools
 
 from pathlib import Path
-from typing import Literal, Any, Generator
+from typing import Literal, Any, Generator, Iterator
 from enum import Enum
+
+import utils.constants as constants
 
 ###
 #  TODO: 
@@ -109,11 +112,16 @@ class ToolboxConfig():
     
     def asParameters(self) -> list[arcpy.Parameter]:
         return
-    
-def sanitize_filename(filename: str) -> str:
-    """Sanitize a filename."""
 
-    return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
+def toolbox_abspath(path: os.PathLike) -> os.PathLike:
+    """
+    Get absolute path for file within toolbox.
+
+    The path parameter is the relative path to a file within the top-level
+    toolbox folder.
+    """
+
+    return os.path.join(Path(__file__).parents[1].absolute(), path)
 
 def arcprint(*values: object,
              sep: str = " ",
@@ -143,30 +151,52 @@ def arcprint(*values: object,
             arcpy.AddMessage(f"{message}")
     return
 
+def pretty_format(input_list: list[str], header: str = None, prefix: str = None, sort: bool = True,
+                  max_width: int = 100, max_columns: int = 4, min_columns: int = 1, target_len_column: int = 10) -> Iterator[str]:
+    """
+    Consolidate a list of strings into a list of formated strings of a specific
+    length that end with a newline to make printing the list look nicer.
+    """
+
+    # Sort input if idicated
+    if sort: input_list = sorted(input_list, key=lambda s: s.upper())
+
+    # Determine number of columns and lengths
+    len_sorted_input = len(input_list)
+    len_longest_item = max([len(i) for i in input_list])
+    num_columns = max(min_columns, min(int(max_width // len_longest_item), min(int(len_sorted_input / target_len_column), max_columns)))
+    base_height, remainder = divmod(len_sorted_input, num_columns)
+    last_reduced = max(0, (num_columns - 1) - remainder)
+    num_cols_increased = last_reduced + remainder
+    column_lengths = [base_height + (i < num_cols_increased) for i in range(num_columns - 1)] + [base_height - last_reduced]
+
+    # Consolidate items in input_list for printing
+    input_interator = iter(input_list)
+    columns = [list(itertools.islice(input_interator, i)) for i in column_lengths]
+
+    # Add header to start of columns if there is one
+    if header:
+        for c in columns: c[:0] = [header, "—" * max(len(header), max([len(i) for i in c], default=0))]
+    
+    # Determine padding for each column
+    padding = [max([len(value) for value in column], default=0) for column in columns]
+
+    # Zip and return padded rows
+    for row in itertools.zip_longest(*columns, fillvalue=""):
+        padded_column = [value.ljust(pad) for value, pad in zip(row, padding)]
+
+        yield f"{prefix if prefix else ''}{f'{constants.TAB}'.join(padded_column)}\n"
+
 def load_fieldmap(path: os.PathLike) -> arcpy.FieldMappings:
     """Create a Field Mappings object from a .fieldmap file."""
 
     with open(path, 'r') as fieldmap:
         return arcpy.FieldMappings().loadFromString(fieldmap.read())
-    
-def toolbox_abspath(path: os.PathLike) -> os.PathLike:
-    """
-    Get absolute path for file within toolbox.
 
-    The path parameter is the relative path to a file within the top-level
-    toolbox folder.
-    """
+def sanitize_filename(filename: str) -> str:
+    """Sanitize a filename."""
 
-    return os.path.join(Path(__file__).parents[1].absolute(), path)
-
-def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
-    """
-    Attempt to delete scratch names. Return any names that could not
-    be deleted.
-    """
-
-    # Attempt to delete names
-    return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]
+    return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
 
 def create_file(complete_path: str) -> str:
     """Validates file path and creates directory if necessary."""
@@ -179,3 +209,12 @@ def create_file(complete_path: str) -> str:
         os.mkdir(head)
 
     return os.path.join(head, tail)
+
+def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
+    """
+    Attempt to delete scratch names. Return any names that could not
+    be deleted.
+    """
+
+    # Attempt to delete names
+    return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]
