@@ -12,6 +12,10 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 
 ## Setup and Use
 
+### A Note on Python Versions
+
+These tools are designed to be used with the stock Python environemnt that comes with every installation of ArcGIS Pro. This means that everything should be pretty much plug-and-play, without the need to install additional packages. If you do want to create your own Python environment, you may do so with the [Package Manager](https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-conda.htm) in ArcGIS Pro. The tools included in this toolset have only been tested with ArcGIS Pro 3.3 and the stock Python environment it comes with.
+
 ### Downloading the Latest Version of FlickTools
 
 There are several ways to download FlickTools to your computer. The most common way is to clone the GitHub repository as you would any other. Staying current with the `main` branch will make sure you always have the latest updates. Instructions for cloning a GitHub repository can be found [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). If you don't feel like cloning the repository, the FlickTools source code for every version can be downloaded from GitHub. Instructions for that are below. Using this method requires manual updates to the toolbox, which might break the links to the toolbox in your ArcGIS Pro projects if not done carefully.
