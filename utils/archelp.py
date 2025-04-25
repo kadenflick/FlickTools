@@ -2,6 +2,7 @@ import arcpy
 import os
 import json
 import itertools
+import requests
 
 from pathlib import Path
 from typing import Literal, Any, Generator, Iterator
@@ -16,6 +17,51 @@ import utils.constants as constants
 #   - Maybe turn controlCLSID into a dataclass
 #       - Having issues with the enum
 ###
+
+#################################################
+# TOOLBOX
+#################################################
+
+class ToolboxConfig():
+    """
+    Loads a toolbox config file and creates an objeect for accessing the
+    config values. Input is the full path to the config file.
+    """
+
+    def __init__(self, config_path: os.PathLike) -> None:
+        self.config_path = config_path
+        self.config_values = self._load_config(config_path)
+        return
+    
+    def _load_config(self, path) -> dict:
+        """ Attempt to decode json file. """
+        try:
+            return json.load(open(path))
+        except FileNotFoundError:
+            return None
+    
+    def value(self, index: str) -> str:
+        """ Return the config value at the given index. """        
+        if(self.config_values and index in self.config_values.keys()):
+            return self.config_values[index]["value"]
+        return None
+    
+    def asParameters(self) -> list[arcpy.Parameter]:
+        return
+    
+def toolbox_abspath(path: os.PathLike) -> os.PathLike:
+    """
+    Get absolute path for file within toolbox.
+
+    The path parameter is the relative path to a file within the top-level
+    toolbox folder.
+    """
+
+    return os.path.join(Path(__file__).parents[1].absolute(), path)
+
+#################################################
+# ARCPY
+#################################################
 
 class controlCLSID(Enum):
     """
@@ -85,43 +131,74 @@ class Parameters(list):
     
     def __repr__(self) -> str:
         return str(list(self.__dict__.values()))
-
-class ToolboxConfig():
-    """
-    Loads a toolbox config file and creates an objeect for accessing the
-    config values. Input is the full path to the config file.
-    """
-
-    def __init__(self, config_path: os.PathLike) -> None:
-        self.config_path = config_path
-        self.config_values = self._load_config(config_path)
-        return
     
-    def _load_config(self, path) -> dict:
-        """ Attempt to decode json file. """
-        try:
-            return json.load(open(path))
-        except FileNotFoundError:
-            return None
-    
-    def value(self, index: str) -> str:
-        """ Return the config value at the given index. """        
-        if(self.config_values and index in self.config_values.keys()):
-            return self.config_values[index]["value"]
-        return None
-    
-    def asParameters(self) -> list[arcpy.Parameter]:
-        return
+def load_fieldmap(path: os.PathLike) -> arcpy.FieldMappings:
+    """Create a Field Mappings object from a .fieldmap file."""
 
-def toolbox_abspath(path: os.PathLike) -> os.PathLike:
+    with open(path, 'r') as fieldmap:
+        return arcpy.FieldMappings().loadFromString(fieldmap.read())
+    
+def arcgis_rest_query(url: str, query: dict[str, Any], max_records: int) -> dict[str, Any]:
     """
-    Get absolute path for file within toolbox.
-
-    The path parameter is the relative path to a file within the top-level
-    toolbox folder.
+    Query ArcGIS REST service and return all records, regardless of
+    service record limit.
     """
 
-    return os.path.join(Path(__file__).parents[1].absolute(), path)
+    # Set up variables
+    resp = {}
+    if "resultOffset" not in query.keys(): query["resultOffset"] = 0
+
+    # Loop until all records are collected
+    while True:
+        # Get result of query and store the whole things or portions of it as needed
+        cur_resp = requests.get(url, query).json()
+
+        if not resp:
+            resp = cur_resp
+        else:
+            resp["features"].extend(cur_resp["features"])
+
+        # Check if all records in query have been collected
+        if "exceededTransferLimit" not in cur_resp.keys() or not cur_resp["exceededTransferLimit"]:
+            break
+        else:
+            query["resultOffset"] += max_records
+
+    return resp
+
+#################################################
+# FILE IO
+#################################################
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize a filename."""
+
+    return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
+
+def create_file(complete_path: str) -> str:
+    """Validates file path and creates directory if necessary."""
+
+    # Split path
+    head, tail = os.path.split(complete_path)
+
+    # Create directory if it doesn't exist
+    if not os.path.exists(head):
+        os.mkdir(head)
+
+    return os.path.join(head, tail)
+
+def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
+    """
+    Attempt to delete scratch names. Return any names that could not
+    be deleted.
+    """
+
+    # Attempt to delete names
+    return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]
+
+#################################################
+# PRINTING
+#################################################
 
 def arcprint(*values: object,
              sep: str = " ",
@@ -186,35 +263,3 @@ def pretty_format(input_list: list[str], header: str = None, prefix: str = None,
         padded_column = [value.ljust(pad) for value, pad in zip(row, padding)]
 
         yield f"{prefix if prefix else ''}{f'{constants.TAB}'.join(padded_column)}\n"
-
-def load_fieldmap(path: os.PathLike) -> arcpy.FieldMappings:
-    """Create a Field Mappings object from a .fieldmap file."""
-
-    with open(path, 'r') as fieldmap:
-        return arcpy.FieldMappings().loadFromString(fieldmap.read())
-
-def sanitize_filename(filename: str) -> str:
-    """Sanitize a filename."""
-
-    return "".join([char for char in filename if char.isalnum() or char in [' ', '_', '-']])
-
-def create_file(complete_path: str) -> str:
-    """Validates file path and creates directory if necessary."""
-
-    # Split path
-    head, tail = os.path.split(complete_path)
-
-    # Create directory if it doesn't exist
-    if not os.path.exists(head):
-        os.mkdir(head)
-
-    return os.path.join(head, tail)
-
-def delete_scratch_names(scratch_names: list[Any]) -> list[Any]:
-    """
-    Attempt to delete scratch names. Return any names that could not
-    be deleted.
-    """
-
-    # Attempt to delete names
-    return [name for name in scratch_names if not arcpy.Exists(name) or not arcpy.Delete_management(name)]

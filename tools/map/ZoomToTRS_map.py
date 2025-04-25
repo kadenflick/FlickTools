@@ -9,7 +9,6 @@ from utils.tool import Tool
 
 ###
 #  TODO: 
-#   - Fix issue with not getting all available townships
 #   - Improve and expand error checking and handling
 #   - Parse individual columns instead of label column
 #       - Allows pulling of PLSS ID in single call to service
@@ -52,11 +51,12 @@ class ZoomToTRS_map(Tool):
                 "where": "1=1",
                 "returnGeometry": "false",
                 "outFields": "STATEABBR",
+                "orderByFields": "STATEABBR",
                 "returnDistinctValues": "true",
                 "f": "pjson"
             }
             resp = requests.get(self.township_service_url, query).json()
-            state.filter.list = sorted([constants.STATE_NAME(i['attributes']['STATEABBR']) for i in resp['features']])
+            state.filter.list = [constants.STATE_NAME(i['attributes']['STATEABBR']) for i in resp['features'] if i['attributes']['STATEABBR']]
         # Catch the same errors here that we do in update messages 
         except:
             pass
@@ -106,9 +106,10 @@ class ZoomToTRS_map(Tool):
                     "where": f"STATEABBR = '{state_abbr}'",
                     "returnGeometry": "false",
                     "outFields": "TWNSHPLAB",
+                    "orderByFields": "TWNSHPLAB",
                     "f": "pjson"
                 }
-                resp = requests.get(self.township_service_url, query).json()
+                resp = archelp.arcgis_rest_query(self.township_service_url, query, 2000)
                 parameters.township.filter.list = sorted([self._multiple_replace(i['attributes']['TWNSHPLAB']) for i in resp['features']])
             # Catch the same errors here that we do in update messages 
             except:
