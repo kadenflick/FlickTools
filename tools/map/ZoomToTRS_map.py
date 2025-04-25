@@ -109,7 +109,6 @@ class ZoomToTRS_map(Tool):
                     "orderByFields": "TWNSHPLAB",
                     "f": "pjson"
                 }
-                # resp = requests.get(self.township_service_url, query).json()
                 resp = archelp.arcgis_rest_query(self.township_service_url, query, 2000)
                 parameters.township.filter.list = sorted([self._multiple_replace(i['attributes']['TWNSHPLAB']) for i in resp['features']])
             # Catch the same errors here that we do in update messages 
