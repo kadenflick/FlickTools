@@ -22,7 +22,8 @@ def get_module(module_name: str) -> type[Tool]:
 
     *_, tool = module_name.rsplit(".", 1)
     try:
-        return getattr(reload(import_module(module_name)), tool)
+        # return getattr(reload(import_module(module_name)), tool)
+        return getattr(import_module(module_name), tool)
     
     # Catch all exceptions beacuse the imported class can raise any exception
     # The placeholder makes this obvious in the ArcGIS Pro GUI and we write the
