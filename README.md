@@ -14,7 +14,7 @@ Each toolbox contains tools that are useful in different scenarios. Within each 
 
 ### A Note on Python Versions
 
-These tools are designed to be used with the stock Python environemnt that comes with every installation of ArcGIS Pro. This means that everything should be pretty much plug-and-play, without the need to install additional packages. If you do want to create your own Python environment, you may do so with the [Package Manager](https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-conda.htm) in ArcGIS Pro. The tools included in this toolset have only been tested with ArcGIS Pro 3.3 and the stock Python environment it comes with.
+These tools are designed to be used with the stock Python environemnt that comes with every installation of ArcGIS Pro. This means that everything should be pretty much plug-and-play, without the need to install additional packages. If you do want to create your own Python environment, you may do so with the [Package Manager](https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/what-is-conda.htm) in ArcGIS Pro. The tools included in this toolset have only been tested with ArcGIS Pro 3.3 and the defualt Python environment.
 
 ### Downloading the Latest Version of FlickTools
 
@@ -36,7 +36,7 @@ Regardless of the method used to download the toolbox, adding the toolbox files 
 1. Set tool parameters and click the **Run** button.
 
 > [!NOTE] 
-> When adding the toolbox to an ArcGIS Pro project, wait until all layers have loaded and the "Refresh" symbol in the lower right-hand corner of the map or table view has stopped spinning. Adding any toolbox to the map while ArcGIS Pro is loading layers seems to fail silently and cause ArcGIS Pro to hang if layers are still loading.
+> When adding the toolbox to an ArcGIS Pro project, wait until all layers have loaded and the "Refresh" symbol in the lower right-hand corner of the map or table view has stopped spinning. Adding any toolbox to the map while ArcGIS Pro is loading layers seems to fail silently and cause ArcGIS Pro to hang. If this happends, kill the ArcGIS Pro process in the Windows Task Manager, restart the project, and attempt to re-add the toolbox.
 
 ### Editing Default Tool Values
 
