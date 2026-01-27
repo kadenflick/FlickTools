@@ -35,6 +35,7 @@ Regardless of the method used to download the toolbox, adding the toolbox files 
 1. Expand a tool category within the toolbox and open a tool. The tool will open in the geoprocessing pane.
 1. Set tool parameters and click the **Run** button.
 
+> [!NOTE] 
 > When adding the toolbox to an ArcGIS Pro project, wait until all layers have loaded and the "Refresh" symbol in the lower right-hand corner of the map or table view has stopped spinning. Adding any toolbox to the map while ArcGIS Pro is loading layers seems to fail silently and cause ArcGIS Pro to hang if layers are still loading.
 
 ### Editing Default Tool Values
