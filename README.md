@@ -1,6 +1,6 @@
 # FlickTools
 
-FlickTools is ***another*** very cleverly named collection of tools and toolboxes to make the life of a GIS professional a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to.
+FlickTools is ***[another](https://github.com/mpanunto/PanunTools)*** very cleverly named collection of tools and toolboxes to make the life of a GIS professional a little easier. These tools are motivated somewhat by laziness, but also by the fact that Pro can't always do what you want it to.
 
 ## Toolboxes
 
@@ -22,7 +22,7 @@ There are several ways to download FlickTools to your computer. The most common 
 
 If you prefer not to clone the repository, use these instructions to download the latest version:
 
-1. Download the `.zip` file for the last version of FlickTools from the [**Releases**](https://github.com/kadenflick/FlickTools/releases) section of the GitHub repository.
+1. Download the `.zip` file for the last version of FlickTools from the [Releases](https://github.com/kadenflick/FlickTools/releases) section of the GitHub repository.
 1. Unpack the `.zip` file to an appropriate location on your computer.
 
 ### Using a Toolbox with ArcGIS Pro
